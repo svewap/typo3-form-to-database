@@ -1,0 +1,19 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
+
+<f:switch expression="{formInformation.{resultKey}.type}">
+	<f:case value="Text">
+		<span title="{f:format.htmlspecialchars(value: resultValue)}" data-toggle="tooltip">
+			<f:format.crop maxCharacters="30">{resultValue}</f:format.crop>
+		</span>
+	</f:case>
+	<f:case value="Textarea">
+		<span title="{f:format.htmlspecialchars(value: resultValue)}" data-toggle="tooltip">
+			<f:format.crop maxCharacters="30">{resultValue}</f:format.crop>
+		</span>
+	</f:case>
+	<f:defaultCase>
+		{resultValue}
+	</f:defaultCase>
+</f:switch>
+
+</html>

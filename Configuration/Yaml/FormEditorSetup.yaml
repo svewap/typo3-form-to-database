@@ -1,0 +1,30 @@
+TYPO3:
+  CMS:
+    Form:
+      prototypes:
+        standard:
+          formElementsDefinition:
+            Form:
+              formEditor:
+                editors:
+                  900:
+                    selectOptions:
+                      1560425499:
+                        value: 'FormToDatabase'
+                        label: 'formEditor.elements.Form.finisher.SaveToDatabase.editor.header.label'
+                propertyCollections:
+                  finishers:
+                    1560425499:
+                      identifier: 'FormToDatabase'
+                      editors:
+                        __inheritances:
+                          10: 'TYPO3.CMS.Form.mixins.formElementMixins.BaseCollectionEditorsMixin'
+                        100:
+                          label: 'formEditor.elements.Form.finisher.SaveToDatabase.editor.header.label'
+          finishersDefinition:
+            FormToDatabase:
+              formEditor:
+                iconIdentifier: 'form-finisher'
+                label: 'formEditor.elements.Form.finisher.SaveToDatabase.editor.header.label'
+                predefinedDefaults:
+                  options: []

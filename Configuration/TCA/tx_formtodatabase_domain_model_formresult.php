@@ -1,0 +1,44 @@
+<?php
+/**
+ * This file is part of the "form_to_database" Extension for TYPO3 CMS.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE file that was distributed with this source code.
+ */
+
+defined('TYPO3_MODE') or die();
+
+return [
+    'ctrl' => [
+        'crdate' => 'crdate',
+        'tstamp' => 'tstamp',
+        'cruser_id' => 'cruser_id',
+        'hideTable' => true
+    ],
+    'columns' => [
+        'crdate' => [
+            'label' => 'crdate',
+            'config' => [
+                'type' => 'passthrough'
+            ]
+        ],
+        'tstamp' => [
+            'label' => 'tstamp',
+            'config' => [
+                'type' => 'passthrough'
+            ]
+        ],
+        'form_persistence_identifier' => [
+            'label' => 'form_persistence_identifier',
+            'config' => [
+                'type' => 'passthrough'
+            ]
+        ],
+        'result' => [
+            'label' => 'result',
+            'config' => [
+                'type' => 'passthrough'
+            ]
+        ]
+    ]
+];

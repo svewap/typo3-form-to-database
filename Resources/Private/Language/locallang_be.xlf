@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.0" xmlns:t3="http://typo3.org/schemas/xliff">
+    <file t3:id="1560424879" source-language="en" datatype="plaintext" original="messages" date="2019-06-12T10:10:00Z" product-name="form_to_database">
+        <header/>
+        <body>
+            <trans-unit id="index.headline" xml:space="preserve">
+                <source>Form results</source>
+            </trans-unit>
+            <trans-unit id="index.existing_forms" xml:space="preserve">
+                <source>Existing forms</source>
+            </trans-unit>
+            <trans-unit id="index.number_of_results" xml:space="preserve">
+                <source>Number of results</source>
+            </trans-unit>
+            <trans-unit id="show.results_for" xml:space="preserve">
+                <source>Results of form "%s"</source>
+            </trans-unit>
+            <trans-unit id="show.results_not_found.title" xml:space="preserve">
+                <source>No results found!</source>
+            </trans-unit>
+            <trans-unit id="show.results_not_found.message" xml:space="preserve">
+                <source>There are currently no results found for this form.</source>
+            </trans-unit>
+            <trans-unit id="show.crdate" xml:space="preserve">
+                <source>Date/Time</source>
+            </trans-unit>
+            <trans-unit id="show.buttons.backlink" xml:space="preserve">
+                <source>Back to overview</source>
+            </trans-unit>
+            <trans-unit id="show.buttons.download_csv" xml:space="preserve">
+                <source>Download results as CSV</source>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

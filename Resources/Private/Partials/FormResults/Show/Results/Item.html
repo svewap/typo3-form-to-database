@@ -1,0 +1,39 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+	  xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
+	  data-namespace-typo3-fluid="true">
+
+<tr>
+	<td class="col-icon nowrap">
+		<span title="id={form.identifier}" data-toggle="tooltip" data-placement="right">
+			<core:icon identifier="content-form"/>
+		</span>
+	</td>
+	<td class="col-title col-responsive nowrap">
+		<f:link.action action="show"
+					   arguments="{formDefinition: form.persistenceIdentifier}"
+					   title="{f:translate(key: 'LLL:EXT:form/Resources/Private/Language/Database.xlf:formManager.edit_form')}"
+					   data="{toggle: 'tooltip', placement: 'right'}">
+			{form.name}
+		</f:link.action>
+	</td>
+	<td class="col-control nowrap">
+		<div class="btn-group" role="group">
+			<f:link.action action="show"
+						   arguments="{formDefinition: form.persistenceIdentifier}"
+						   title="{f:translate(key: 'LLL:EXT:form/Resources/Private/Language/Database.xlf:formManager.edit_form')}"
+						   class="btn btn-default form-record-open">
+				<core:icon identifier="actions-document-view"/>
+			</f:link.action>
+		</div>
+	</td>
+	<td class="nowrap">
+		<f:link.action action="show"
+					   arguments="{formDefinition: form.persistenceIdentifier}"
+					   title="{f:translate(key: 'LLL:EXT:form/Resources/Private/Language/Database.xlf:formManager.edit_form')}">
+			{form.numberOfResults}
+		</f:link.action>
+	</td>
+	<td class="nowrap">{form.persistenceIdentifier}</td>
+</tr>
+
+</html>

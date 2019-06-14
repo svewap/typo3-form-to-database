@@ -1,0 +1,56 @@
+{
+  "name": "lavitto/typo3-form-to-database",
+  "description": "Extends the TYPO3 form with a database finisher, to save every form-result in the database.",
+  "type": "typo3-cms-extension",
+  "keywords": [
+    "TYPO3",
+    "extension",
+    "form",
+    "save form",
+    "typo3 form",
+    "form to database"
+  ],
+  "homepage": "https://www.lavitto.ch/typo3-ext-form-to-database",
+  "authors": [
+    {
+      "name": "Philipp Mueller",
+      "email": "philipp.mueller@lavitto.ch",
+      "homepage": "https://www.lavitto.ch"
+    }
+  ],
+  "license": "GPL-3.0-or-later",
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://composer.typo3.org/"
+    }
+  ],
+  "config": {
+    "vendor-dir": ".Build/vendor",
+    "bin-dir": ".Build/bin"
+  },
+  "require": {
+    "php": ">=7.1.0",
+    "typo3/cms-core": "^9.5",
+    "typo3/cms-extbase": "^9.5",
+    "typo3/cms-fluid": "^9.5",
+    "typo3/cms-frontend": "^9.5",
+    "typo3/cms-backend": "^9.5",
+    "typo3/cms-form": "^9.5"
+  },
+  "replace": {
+    "lavitto/typo3-form-to-database": "self.version"
+  },
+  "autoload": {
+    "psr-4": {
+      "Lavitto\\FormToDatabase\\": "Classes"
+    }
+  },
+  "extra": {
+    "typo3/cms": {
+      "extension-key": "form_to_database",
+      "cms-package-dir": "{$vendor-dir}/typo3/cms",
+      "web-dir": ".Build/Web"
+    }
+  }
+}
