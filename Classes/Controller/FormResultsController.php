@@ -289,10 +289,27 @@ class FormResultsController extends FormManagerController
     {
         /** @var LocalDriver $localDriver */
         $localDriver = $this->objectManager->get(LocalDriver::class);
-        $dateTime = new DateTime('now', new DateTimeZone($GLOBALS['TYPO3_CONF_VARS']['SYS']['phpTimeZone'] ?? 'UTC'));
+        $dateTime = new DateTime('now', $this->getValidTimezone());
         $filename = $dateTime->format($this->getDateFormat() . ' ' . $this->getTimeFormat());
         $filename .= '_' . preg_replace('/\.form\.yaml$/', '', basename($formPersistenceIdentifier)) . '.csv';
         return $localDriver->sanitizeFileName($filename);
+    }
+
+    /**
+     * Returns a valid DateTimeZone with fallback function TYPO3_CONF_VARS > default_timezone > UTC
+     *
+     * @return DateTimeZone
+     */
+    protected function getValidTimezone(): DateTimeZone
+    {
+        if (in_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['phpTimeZone'], timezone_identifiers_list(), true) === true) {
+            $validTimeZone = $GLOBALS['TYPO3_CONF_VARS']['SYS']['phpTimeZone'];
+        } elseif (in_array(date_default_timezone_get(), timezone_identifiers_list(), true) === true) {
+            $validTimeZone = date_default_timezone_get();
+        } else {
+            $validTimeZone = DateTimeZone::UTC;
+        }
+        return new DateTimeZone($validTimeZone);
     }
 
     /**
