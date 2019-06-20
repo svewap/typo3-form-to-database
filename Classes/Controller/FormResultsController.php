@@ -17,6 +17,7 @@ use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Resource\Driver\LocalDriver;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 use TYPO3\CMS\Extbase\Mvc\Exception\NoSuchArgumentException;
 use TYPO3\CMS\Extbase\Persistence\QueryResultInterface;
 use TYPO3\CMS\Form\Controller\FormManagerController;
@@ -181,8 +182,10 @@ class FormResultsController extends FormManagerController
      * @param string|null $formPersistenceIdentifier
      * @param bool $showCsvDownload
      */
-    protected function registerDocheaderButtons(string $formPersistenceIdentifier = null, bool $showCsvDownload = false): void
-    {
+    protected function registerDocheaderButtons(
+        string $formPersistenceIdentifier = null,
+        bool $showCsvDownload = false
+    ): void {
         /** @var ButtonBar $buttonBar */
         $buttonBar = $this->view->getModuleTemplate()->getDocHeaderComponent()->getButtonBar();
         $currentRequest = $this->request;
@@ -215,10 +218,15 @@ class FormResultsController extends FormManagerController
             }
         }
 
-        // Reload
+        // Reload title
+        if (version_compare(VersionNumberUtility::getNumericTypo3Version(), '9.5', '>=') === true) {
+            $reloadTitle = $this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.reload');
+        } else {
+            $reloadTitle = $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.reload');
+        }
         $reloadButton = $buttonBar->makeLinkButton()
             ->setHref(GeneralUtility::getIndpEnv('REQUEST_URI'))
-            ->setTitle($this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.reload'))
+            ->setTitle($reloadTitle)
             ->setIcon($this->view->getModuleTemplate()->getIconFactory()->getIcon('actions-refresh', Icon::SIZE_SMALL));
         $buttonBar->addButton($reloadButton, ButtonBar::BUTTON_POSITION_RIGHT);
 

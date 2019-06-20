@@ -31,12 +31,12 @@
   },
   "require": {
     "php": ">=7.1.0",
-    "typo3/cms-core": "^9.5",
-    "typo3/cms-extbase": "^9.5",
-    "typo3/cms-fluid": "^9.5",
-    "typo3/cms-frontend": "^9.5",
-    "typo3/cms-backend": "^9.5",
-    "typo3/cms-form": "^9.5"
+    "typo3/cms-core": "^8.7 || ^9.5",
+    "typo3/cms-extbase": "^8.7 || ^9.5",
+    "typo3/cms-fluid": "^8.7 || ^9.5",
+    "typo3/cms-frontend": "^8.7 || ^9.5",
+    "typo3/cms-backend": "^8.7 || ^9.5",
+    "typo3/cms-form": "^8.7 || ^9.5"
   },
   "replace": {
     "lavitto/typo3-form-to-database": "self.version"

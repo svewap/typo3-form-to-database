@@ -11,12 +11,22 @@
 			<f:render partial="FormResults/Index/Results" arguments="{_all}"/>
 		</f:then>
 		<f:else>
-			<f:be.infobox state="-1"
-						  title="{f:translate(key: 'LLL:EXT:form/Resources/Private/Language/Database.xlf:formManager.forms_not_found.title')}">
-				<p>
-					<f:translate
-							key="LLL:EXT:form/Resources/Private/Language/Database.xlf:formManager.forms_not_found.message"/>
-				</p>
+			<f:variable name="label_notFoundTitle"
+						value="{f:translate(key: 'LLL:EXT:form/Resources/Private/Language/Database.xlf:formManager.forms_not_found.title')}"/>
+			<f:if condition="!{label_notFoundTitle}">
+				<f:variable name="label_notFoundTitle"
+							value="{f:translate(key: 'LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:formManager.forms_not_found.title')}"/>
+			</f:if>
+
+			<f:variable name="label_notFoundMessage"
+						value="{f:translate(key: 'LLL:EXT:form/Resources/Private/Language/Database.xlf:formManager.forms_not_found.message')}"/>
+			<f:if condition="!{label_notFoundMessage}">
+				<f:variable name="label_notFoundMessage"
+							value="{f:translate(key: 'LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:formManager.forms_not_found.message')}"/>
+			</f:if>
+
+			<f:be.infobox state="-1" title="{label_notFoundTitle}">
+				<p>{label_notFoundMessage}</p>
 			</f:be.infobox>
 		</f:else>
 	</f:if>
