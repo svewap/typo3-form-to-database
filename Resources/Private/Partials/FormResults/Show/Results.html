@@ -1,5 +1,4 @@
 <html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
-	  xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
 	  data-namespace-typo3-fluid="true">
 
 <f:be.widget.paginate as="paginatedFormResults" objects="{formResults}"
@@ -22,39 +21,15 @@
 							<f:translate
 									key="LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.crdate"/>
 						</th>
-						<f:for each="{formFields}" as="formField">
-							<th>{formInformation.{formField}.label}</th>
+						<f:for each="{formRenderables}" as="renderable">
+							<th>{renderable.label}</th>
 						</f:for>
 						<th>&nbsp;</th>
 					</tr>
 					</thead>
 					<tbody>
-					<f:for each="{paginatedFormResults}" as="formResult">
-						<tr>
-							<td>{formResult.crdate -> f:format.date(format: '{dateFormat} {timeFormat}')}</td>
-							<f:for each="{formFields}" as="resultKey">
-								<td>
-									<f:variable name="resultValue">{formResult.resultAsArray.{resultKey}}</f:variable>
-									<f:if condition="{formResult.resultAsArray.{resultKey}}">
-										<f:then>
-											<f:render partial="FormResults/Show/Results/Item/ResultValue"
-													  arguments="{_all}"/>
-										</f:then>
-										<f:else>
-											&nbsp;
-										</f:else>
-									</f:if>
-								</td>
-							</f:for>
-							<td class="col-control nowrap">
-								<div class="btn-group" role="group">
-									<a href="#" class="btn btn-default" data-toggle="modal"
-									   data-target="#resultDetail{formResult.uid}">
-										<core:icon identifier="actions-document-view"/>
-									</a>
-								</div>
-							</td>
-						</tr>
+					<f:for each="{paginatedFormResults}" as="formResult" iteration="iterator">
+						<f:render partial="FormResults/Show/Results/Item" arguments="{_all}"/>
 					</f:for>
 					</tbody>
 				</table>
@@ -62,7 +37,7 @@
 		</div>
 	</div>
 	<f:for each="{paginatedFormResults}" as="formResult">
-		<f:render partial="FormResults/Show/Results/Item/ResultDetail" arguments="{_all}"/>
+		<f:render partial="FormResults/Show/Results/ItemDetail" arguments="{_all}"/>
 	</f:for>
 </f:be.widget.paginate>
 

@@ -10,9 +10,11 @@ namespace Lavitto\FormToDatabase\Domain\Finishers;
 
 use Lavitto\FormToDatabase\Domain\Model\FormResult;
 use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
+use TYPO3\CMS\Extbase\Domain\Model\FileReference;
 use TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException;
 use TYPO3\CMS\Form\Domain\Finishers\AbstractFinisher;
 use TYPO3\CMS\Form\Domain\Model\FormDefinition;
+use TYPO3\CMS\Form\Domain\Model\FormElements\FormElementInterface;
 
 /**
  * Class FormToDatabaseFinisher
@@ -52,8 +54,13 @@ class FormToDatabaseFinisher extends AbstractFinisher
 
             $formValues = [];
             foreach ($this->finisherContext->getFormValues() as $fieldName => $fieldValue) {
-                if ($formDefinition->getElementByIdentifier($fieldName)->getType() !== 'Honeypot') {
-                    $formValues[$fieldName] = $fieldValue;
+                $fieldElement = $formDefinition->getElementByIdentifier($fieldName);
+                if ($fieldElement instanceof FormElementInterface && $fieldElement->getType() !== 'Honeypot') {
+                    if ($fieldValue instanceof FileReference) {
+                        $formValues[$fieldName] = $fieldValue->getOriginalResource()->getCombinedIdentifier();
+                    } else {
+                        $formValues[$fieldName] = $fieldValue;
+                    }
                 }
             }
 

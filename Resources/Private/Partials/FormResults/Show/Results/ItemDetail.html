@@ -1,5 +1,6 @@
 <html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
 	  xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
+	  xmlns:ftdb="http://typo3.org/ns/Lavitto/FormToDatabase/ViewHelpers"
 	  data-namespace-typo3-fluid="true">
 
 <div class="t3js-modal modal fade modal-severity-notice modal-style-default modal-size-medium"
@@ -16,14 +17,16 @@
 			</div>
 			<div class="t3js-modal-body modal-body">
 				<table class="table table-striped table-hover">
-					<f:for each="{formResult.resultAsArray}" key="resultKey" as="resultValue">
+					<f:for each="{formRenderables}" as="renderable">
 						<tr>
 							<th>
-								{formInformation.{resultKey}.label}
+								{renderable.label}
 							</th>
 							<td>
-								<f:render partial="FormResults/Show/Results/Item/ResultDetail/ResultValue"
-										  arguments="{_all}"/>
+								<f:format.raw>
+									<ftdb:formValue value="{formResult.resultAsArray.{renderable.identifier}}"
+													element="{renderable}"/>
+								</f:format.raw>
 							</td>
 						</tr>
 					</f:for>

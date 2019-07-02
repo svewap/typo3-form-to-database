@@ -13,14 +13,18 @@ use DateTimeZone;
 use Exception;
 use Lavitto\FormToDatabase\Domain\Model\FormResult;
 use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
+use Lavitto\FormToDatabase\Utility\FormValueUtility;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Resource\Driver\LocalDriver;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 use TYPO3\CMS\Extbase\Mvc\Exception\NoSuchArgumentException;
-use TYPO3\CMS\Extbase\Persistence\QueryResultInterface;
 use TYPO3\CMS\Form\Controller\FormManagerController;
+use TYPO3\CMS\Form\Domain\Exception\RenderingException;
+use TYPO3\CMS\Form\Domain\Factory\ArrayFormFactory;
+use TYPO3\CMS\Form\Domain\Model\FormDefinition;
+use TYPO3\CMS\Form\Domain\Model\FormElements\AbstractFormElement;
 
 /**
  * Class FormResultsController
@@ -53,6 +57,11 @@ class FormResultsController extends FormManagerController
     protected $formResultRepository;
 
     /**
+     * @var DateTimeZone
+     */
+    protected $timeZone;
+
+    /**
      * Injects the FormResultRepository
      *
      * @param FormResultRepository $formResultRepository
@@ -80,24 +89,22 @@ class FormResultsController extends FormManagerController
      * Shows the results of a form
      *
      * @param string $formPersistenceIdentifier
+     * @throws RenderingException
      */
     public function showAction(string $formPersistenceIdentifier): void
     {
         $this->view->getModuleTemplate()->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/Modal');
 
-        $formDefinition = $this->formPersistenceManager->load($formPersistenceIdentifier);
-        $formInformation = $this->getFormInformation($formDefinition['renderables']);
         $formResults = $this->formResultRepository->findByFormPersistenceIdentifier($formPersistenceIdentifier);
+        $formDefinition = $this->getFormDefinition($formPersistenceIdentifier);
+        $formRenderables = $this->getFormRenderables($formDefinition);
 
         $this->registerDocheaderButtons($formPersistenceIdentifier, $formResults->count() > 0);
-
         $this->view->assignMultiple([
-            'formDefinition' => $formDefinition,
-            'formInformation' => $formInformation,
             'formResults' => $formResults,
-            'formFields' => $this->getFormFields($formResults, $formInformation)
+            'formDefinition' => $formDefinition,
+            'formRenderables' => $formRenderables
         ]);
-
         $this->assignDefaults();
     }
 
@@ -135,45 +142,109 @@ class FormResultsController extends FormManagerController
     }
 
     /**
-     * Gets an array with all form labels by the form definition
+     * Gets a form definition by a persistence form identifier
      *
-     * @param array $renderables
-     * @param array $formFields
-     * @return array
+     * @param string $formPersistenceIdentifier
+     * @return FormDefinition
+     * @throws RenderingException
      */
-    protected function getFormInformation(array $renderables, array $formFields = []): array
+    protected function getFormDefinition(string $formPersistenceIdentifier): FormDefinition
     {
-        foreach ($renderables as $renderable) {
-            $formFields[$renderable['identifier']] = [
-                'label' => $renderable['label'],
-                'type' => $renderable['type']
-            ];
-            if ($renderable['renderables'] !== null && !empty($renderable['renderables'])) {
-                $formFields = $this->getFormInformation($renderable['renderables'], $formFields);
-            }
-        }
-        return $formFields;
+        $configuration = $this->formPersistenceManager->load($formPersistenceIdentifier);
+        $configuration['finishers'] = [];
+
+        /** @var ArrayFormFactory $arrayFormFactory */
+        $arrayFormFactory = $this->objectManager->get(ArrayFormFactory::class);
+        return $arrayFormFactory->build($configuration);
     }
 
     /**
-     * Gets and returns the FormFields
+     * Gets an array of all form renderables (recursive) by a form definition
      *
-     * @param QueryResultInterface $formResults
-     * @param array $formInformation
+     * @param FormDefinition $formDefinition
      * @return array
      */
-    protected function getFormFields(QueryResultInterface $formResults, array $formInformation): array
+    protected function getFormRenderables(FormDefinition $formDefinition): array
     {
-        $formHeaders = [];
-        /** @var FormResult $formResult */
-        foreach ($formResults->toArray() as $formResult) {
-            foreach ($formResult->getResultAsArray() as $fieldName => $fieldValue) {
-                if (isset($formInformation[$fieldName]) && !in_array($fieldName, $formHeaders, true)) {
-                    $formHeaders[] = $fieldName;
-                }
+        $formRenderables = [];
+        /** @var AbstractFormElement $renderable */
+        foreach ($formDefinition->getRenderablesRecursively() as $renderable) {
+            if ($renderable instanceof AbstractFormElement) {
+                $formRenderables[$renderable->getIdentifier()] = $renderable;
             }
         }
-        return $formHeaders;
+        return $formRenderables;
+    }
+
+    /**
+     * Generates and returns the csv content by a given formPersistenceIdentifier
+     *
+     * @param string $formPersistenceIdentifier
+     * @return string
+     * @throws RenderingException
+     */
+    protected function getCsvContent(string $formPersistenceIdentifier): string
+    {
+        $csvContent = [];
+
+        $formResults = $this->formResultRepository->findByFormPersistenceIdentifier($formPersistenceIdentifier);
+        $formDefinition = $this->getFormDefinition($formPersistenceIdentifier);
+        $formRenderables = $this->getFormRenderables($formDefinition);
+
+        $header = [
+            self::CSV_ENCLOSURE . $this->getLanguageService()->sL('LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.crdate') . self::CSV_ENCLOSURE
+        ];
+        /** @var AbstractFormElement $renderable */
+        foreach ($formRenderables as $renderable) {
+            $header[] = self::CSV_ENCLOSURE . $renderable->getLabel() . self::CSV_ENCLOSURE;
+        }
+        $csvContent[] = implode(self::CSV_DELIMITER, $header);
+
+        /** @var FormResult $formResult */
+        foreach ($formResults as $i => $formResult) {
+            $resultsArray = $formResult->getResultAsArray();
+            $content = [
+                self::CSV_ENCLOSURE . $formResult->getCrdate()->format(FormValueUtility::getDateFormat() . ' ' . FormValueUtility::getTimeFormat()) . self::CSV_ENCLOSURE
+            ];
+            foreach ($formRenderables as $renderable) {
+                $fieldValue = $resultsArray[$renderable->getIdentifier()] ?? '';
+                $convertedFieldValue = FormValueUtility::convertFormValue($renderable, $fieldValue, FormValueUtility::OUTPUT_TYPE_CSV);
+                $cleanFieldValue = trim(str_replace(self::CSV_ENCLOSURE, '\\' . self::CSV_ENCLOSURE, $convertedFieldValue));
+                $content[] = self::CSV_ENCLOSURE . $cleanFieldValue . self::CSV_ENCLOSURE;
+            }
+            $csvContent[] = implode(self::CSV_DELIMITER, $content);
+        }
+
+        return implode(self::CSV_LINEBREAK, $csvContent);
+    }
+
+    /**
+     * Creates and returns the csv filename by a given formPersistenceIdentifier
+     *
+     * @param string $formPersistenceIdentifier
+     * @return string
+     * @throws Exception
+     */
+    protected function getCsvFilename(string $formPersistenceIdentifier): string
+    {
+        /** @var LocalDriver $localDriver */
+        $localDriver = $this->objectManager->get(LocalDriver::class);
+        $dateTime = new DateTime('now',
+            FormValueUtility::getValidTimezone((string)$GLOBALS['TYPO3_CONF_VARS']['SYS']['phpTimeZone']));
+        $filename = $dateTime->format(FormValueUtility::getDateFormat() . ' ' . FormValueUtility::getTimeFormat());
+        $filename .= '_' . preg_replace('/\.form\.yaml$/', '', basename($formPersistenceIdentifier)) . '.csv';
+        return $localDriver->sanitizeFileName($filename);
+    }
+
+    /**
+     * Assigns the default variables
+     */
+    protected function assignDefaults(): void
+    {
+        $this->view->assignMultiple([
+            'dateFormat' => FormValueUtility::getDateFormat(),
+            'timeFormat' => FormValueUtility::getTimeFormat()
+        ]);
     }
 
     /**
@@ -244,110 +315,5 @@ class FormResultsController extends FormManagerController
                 ->setGetVariables($getVars);
             $buttonBar->addButton($shortcutButton, ButtonBar::BUTTON_POSITION_RIGHT);
         }
-    }
-
-    /**
-     * Generates and returns the csv content by a given formPersistenceIdentifier
-     *
-     * @param string $formPersistenceIdentifier
-     * @return string
-     */
-    protected function getCsvContent(string $formPersistenceIdentifier): string
-    {
-        $csvContent = [];
-
-        $formResults = $this->formResultRepository->findByFormPersistenceIdentifier($formPersistenceIdentifier);
-        $formDefinition = $this->formPersistenceManager->load($formPersistenceIdentifier);
-        $formInformation = $this->getFormInformation($formDefinition['renderables']);
-        $formFields = $this->getFormFields($formResults, $formInformation);
-
-        $header = [
-            self::CSV_ENCLOSURE . $this->getLanguageService()->sL('LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.crdate') . self::CSV_ENCLOSURE
-        ];
-        foreach ($formFields as $formField) {
-            $header[] = self::CSV_ENCLOSURE . $formInformation[$formField]['label'] . self::CSV_ENCLOSURE;
-        }
-        $csvContent[] = implode(self::CSV_DELIMITER, $header);
-
-        /** @var FormResult $formResult */
-        foreach ($formResults as $i => $formResult) {
-            $resultsArray = $formResult->getResultAsArray();
-            $content = [
-                self::CSV_ENCLOSURE . $formResult->getCrdate()->format($this->getDateFormat() . ' ' . $this->getTimeFormat()) . self::CSV_ENCLOSURE
-            ];
-            foreach ($formFields as $formField) {
-                $fieldValue = $resultsArray[$formField] ?? '';
-                $cleanFieldValue = trim(str_replace(self::CSV_ENCLOSURE, '\\' . self::CSV_ENCLOSURE, $fieldValue));
-                $content[] = self::CSV_ENCLOSURE . $cleanFieldValue . self::CSV_ENCLOSURE;
-            }
-            $csvContent[] = implode(self::CSV_DELIMITER, $content);
-        }
-
-        return implode(self::CSV_LINEBREAK, $csvContent);
-    }
-
-    /**
-     * Creates and returns the csv filename by a given formPersistenceIdentifier
-     *
-     * @param string $formPersistenceIdentifier
-     * @return string
-     * @throws Exception
-     */
-    protected function getCsvFilename(string $formPersistenceIdentifier): string
-    {
-        /** @var LocalDriver $localDriver */
-        $localDriver = $this->objectManager->get(LocalDriver::class);
-        $dateTime = new DateTime('now', $this->getValidTimezone());
-        $filename = $dateTime->format($this->getDateFormat() . ' ' . $this->getTimeFormat());
-        $filename .= '_' . preg_replace('/\.form\.yaml$/', '', basename($formPersistenceIdentifier)) . '.csv';
-        return $localDriver->sanitizeFileName($filename);
-    }
-
-    /**
-     * Returns a valid DateTimeZone with fallback function TYPO3_CONF_VARS > default_timezone > UTC
-     *
-     * @return DateTimeZone
-     */
-    protected function getValidTimezone(): DateTimeZone
-    {
-        if (in_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['phpTimeZone'], timezone_identifiers_list(), true) === true) {
-            $validTimeZone = $GLOBALS['TYPO3_CONF_VARS']['SYS']['phpTimeZone'];
-        } elseif (in_array(date_default_timezone_get(), timezone_identifiers_list(), true) === true) {
-            $validTimeZone = date_default_timezone_get();
-        } else {
-            $validTimeZone = DateTimeZone::UTC;
-        }
-        return new DateTimeZone($validTimeZone);
-    }
-
-    /**
-     * Assigns the default variables
-     */
-    protected function assignDefaults(): void
-    {
-        $this->view->assignMultiple([
-            'dateFormat' => $this->getDateFormat(),
-            'timeFormat' => $this->getTimeFormat()
-        ]);
-    }
-
-    /**
-     * Returns the date format, configured in TYPO3_CONF_VARS with fallback-option
-     *
-     * @return string
-     */
-    protected function getDateFormat(): string
-    {
-        return $GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy'] ?? 'd-m-y';
-    }
-
-    /**
-     * Returns the time format, configured in TYPO3_CONF_VARS with fallback-option
-     *
-     * @return string
-     */
-    protected function getTimeFormat(): string
-    {
-        return $GLOBALS['TYPO3_CONF_VARS']['SYS']['hhmm'] ?? 'H:i';
     }
 }

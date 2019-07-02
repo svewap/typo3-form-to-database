@@ -1,39 +1,26 @@
 <html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
 	  xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
+	  xmlns:ftdb="http://typo3.org/ns/Lavitto/FormToDatabase/ViewHelpers"
 	  data-namespace-typo3-fluid="true">
 
 <tr>
-	<td class="col-icon nowrap">
-		<span title="id={form.identifier}" data-toggle="tooltip" data-placement="right">
-			<core:icon identifier="content-form"/>
-		</span>
-	</td>
-	<td class="col-title col-responsive nowrap">
-		<f:link.action action="show"
-					   arguments="{formDefinition: form.persistenceIdentifier}"
-					   title="{f:translate(key: 'LLL:EXT:form/Resources/Private/Language/Database.xlf:formManager.edit_form')}"
-					   data="{toggle: 'tooltip', placement: 'right'}">
-			{form.name}
-		</f:link.action>
-	</td>
+	<td>{formResult.crdate -> f:format.date(format: '{dateFormat} {timeFormat}')}</td>
+	<f:for each="{formRenderables}" as="renderable">
+		<td>
+			<f:format.raw>
+				<ftdb:formValue value="{formResult.resultAsArray.{renderable.identifier}}"
+								element="{renderable}" crop="true" />
+			</f:format.raw>
+		</td>
+	</f:for>
 	<td class="col-control nowrap">
 		<div class="btn-group" role="group">
-			<f:link.action action="show"
-						   arguments="{formDefinition: form.persistenceIdentifier}"
-						   title="{f:translate(key: 'LLL:EXT:form/Resources/Private/Language/Database.xlf:formManager.edit_form')}"
-						   class="btn btn-default form-record-open">
+			<a href="#" class="btn btn-default" data-toggle="modal"
+			   data-target="#resultDetail{formResult.uid}">
 				<core:icon identifier="actions-document-view"/>
-			</f:link.action>
+			</a>
 		</div>
 	</td>
-	<td class="nowrap">
-		<f:link.action action="show"
-					   arguments="{formDefinition: form.persistenceIdentifier}"
-					   title="{f:translate(key: 'LLL:EXT:form/Resources/Private/Language/Database.xlf:formManager.edit_form')}">
-			{form.numberOfResults}
-		</f:link.action>
-	</td>
-	<td class="nowrap">{form.persistenceIdentifier}</td>
 </tr>
 
 </html>
