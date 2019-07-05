@@ -63,3 +63,11 @@ No configuration required.
 ## 6. Contribute
 
 Please create an issue at https://gitlab.com/lavitto/typo3-form-to-database/issues.
+
+**Please use GitLab only for bug-reporting or feature-requests. For support use the TYPO3 community channels or contact us by email.**
+
+## 7. Support
+
+If you need private or personal support, contact us by email on [info@lavitto.ch](mailto:info@lavitto.ch). 
+
+**Be aware that this support might not be free!**
