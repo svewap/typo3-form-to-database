@@ -39,6 +39,18 @@
                 <source>Download results as CSV</source>
                 <target>Resultate als CSV herunterladen</target>
             </trans-unit>
+            <trans-unit id="show.buttons.delete" xml:space="preserve">
+                <source>Delete Form Result</source>
+                <target>Formular-Resultat löschen</target>
+            </trans-unit>
+            <trans-unit id="show.buttons.delete.title" xml:space="preserve">
+                <source>Really delete?</source>
+                <target>Wirklich löschen?</target>
+            </trans-unit>
+            <trans-unit id="show.buttons.delete.description" xml:space="preserve">
+                <source>Are you sure you want to delete the form result?</source>
+                <target>Möchten Sie das Formular-Resultat wirklich löschen?</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>

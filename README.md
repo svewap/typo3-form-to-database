@@ -20,6 +20,7 @@
 - No database-changes per form required
 - Shows all results per form in a separate backend module
 - Provides a CSV-download of all results
+- Automatic deletion of results after a specified number of days (GDPR)
 
 ### Screenshots
 
@@ -56,17 +57,29 @@ No setup required.
 2) Add the finisher "Save the mail to the Database"
 3) Save the form
 
-## 5. Configuration
+## 5. Command / Scheduler
+
+It's possible to delete the form results by the command line or scheduler (Execute console commands).
+
+```shell script
+Usage:
+  form_to_database:deleteFormResults [<maxAge>]
+
+Arguments:
+  maxAge                Maximum age of form results in days [default: 90]
+```
+
+## 6. Configuration
 
 No configuration required.
 
-## 6. Contribute
+## 7. Contribute
 
 Please create an issue at https://gitlab.com/lavitto/typo3-form-to-database/issues.
 
 **Please use GitLab only for bug-reporting or feature-requests. For support use the TYPO3 community channels or contact us by email.**
 
-## 7. Support
+## 8. Support
 
 If you need private or personal support, contact us by email on [info@lavitto.ch](mailto:info@lavitto.ch). 
 

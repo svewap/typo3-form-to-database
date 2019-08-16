@@ -8,6 +8,11 @@
 
 namespace Lavitto\FormToDatabase\Domain\Repository;
 
+use DateInterval;
+use DateTime;
+use Exception;
+use Lavitto\FormToDatabase\Utility\FormValueUtility;
+use TYPO3\CMS\Extbase\Persistence\Exception\InvalidQueryException;
 use TYPO3\CMS\Extbase\Persistence\Generic\Typo3QuerySettings;
 use TYPO3\CMS\Extbase\Persistence\QueryInterface;
 use TYPO3\CMS\Extbase\Persistence\QueryResultInterface;
@@ -74,5 +79,24 @@ class FormResultRepository extends Repository
         $query = $this->createQuery();
         $query->matching($query->equals('formPersistenceIdentifier', $formPersistenceIdentifier));
         return $query;
+    }
+
+    /**
+     * Returns all form results were older than "maxAge" (days)
+     *
+     * @param int $maxAge
+     * @return QueryResultInterface
+     * @throws InvalidQueryException
+     * @throws Exception
+     */
+    public function findByMaxAge(int $maxAge): QueryResultInterface
+    {
+        $dateInterval = DateInterval::createFromDateString($maxAge . ' days');
+        $maxDate = new DateTime('now',
+            FormValueUtility::getValidTimezone((string)$GLOBALS['TYPO3_CONF_VARS']['SYS']['phpTimeZone']));
+        $maxDate->sub($dateInterval);
+        $query = $this->createQuery();
+        $query->matching($query->lessThan('tstamp', $maxDate));
+        return $query->execute();
     }
 }

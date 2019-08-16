@@ -9,7 +9,7 @@
 		<td>
 			<f:format.raw>
 				<ftdb:formValue value="{formResult.resultAsArray.{renderable.identifier}}"
-								element="{renderable}" crop="true" />
+								element="{renderable}" crop="true"/>
 			</f:format.raw>
 		</td>
 	</f:for>
@@ -18,6 +18,14 @@
 			<a href="#" class="btn btn-default" data-toggle="modal"
 			   data-target="#resultDetail{formResult.uid}">
 				<core:icon identifier="actions-document-view"/>
+			</a>
+			<f:variable name="deleteActionUri"
+						value="{f:uri.action(action: 'deleteFormResult', arguments: '{formResult: formResult}')}"/>
+			<a href="#"
+			   class="btn btn-default t3js-record-delete"
+			   title="{f:translate(key: 'LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.buttons.delete')}"
+			   onclick="top.TYPO3.Modal.confirm(TYPO3.lang.ftd_deleteTitle, TYPO3.lang.ftd_deleteDescription).on('button.clicked', function(e) { if (e.target.name == 'ok') { location.href='{deleteActionUri}'; } top.TYPO3.Modal.dismiss(); });">
+				<core:icon identifier="actions-delete"/>
 			</a>
 		</div>
 	</td>

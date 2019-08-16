@@ -36,6 +36,15 @@
             <trans-unit id="formManager.forms_not_found.message" xml:space="preserve">
                 <source>There are currently no forms found in the system.</source>
             </trans-unit>
+            <trans-unit id="show.buttons.delete" xml:space="preserve">
+                <source>Delete Form Result</source>
+            </trans-unit>
+            <trans-unit id="show.buttons.delete.title" xml:space="preserve">
+                <source>Really delete?</source>
+            </trans-unit>
+            <trans-unit id="show.buttons.delete.description" xml:space="preserve">
+                <source>Are you sure you want to delete the form result?</source>
+            </trans-unit>
         </body>
     </file>
 </xliff>

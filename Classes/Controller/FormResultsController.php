@@ -57,11 +57,6 @@ class FormResultsController extends FormManagerController
     protected $formResultRepository;
 
     /**
-     * @var DateTimeZone
-     */
-    protected $timeZone;
-
-    /**
      * Injects the FormResultRepository
      *
      * @param FormResultRepository $formResultRepository
@@ -93,7 +88,12 @@ class FormResultsController extends FormManagerController
      */
     public function showAction(string $formPersistenceIdentifier): void
     {
+        $languageFile = 'LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:';
         $this->view->getModuleTemplate()->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/Modal');
+        $this->view->getModuleTemplate()->getPageRenderer()->addInlineLanguageLabelArray([
+            'ftd_deleteTitle' => $this->getLanguageService()->sL($languageFile . 'show.buttons.delete.title'),
+            'ftd_deleteDescription' => $this->getLanguageService()->sL($languageFile . 'show.buttons.delete.description')
+        ]);
 
         $formResults = $this->formResultRepository->findByFormPersistenceIdentifier($formPersistenceIdentifier);
         $formDefinition = $this->getFormDefinition($formPersistenceIdentifier);
@@ -123,6 +123,21 @@ class FormResultsController extends FormManagerController
         header('Content-Length: ' . strlen($csvContent));
         echo $csvContent;
         die;
+    }
+
+    /**
+     * Deletes a form result and forwards to the show action
+     *
+     * @param FormResult $formResult
+     * @throws \TYPO3\CMS\Extbase\Mvc\Exception\StopActionException
+     * @throws \TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException
+     * @throws \TYPO3\CMS\Extbase\Mvc\Exception\UnsupportedRequestTypeException
+     */
+    public function deleteFormResultAction(FormResult $formResult): void
+    {
+        $formPersistenceIdentifier = $formResult->getFormPersistenceIdentifier();
+        $this->formResultRepository->remove($formResult);
+        $this->redirect('show', null, null, ['formPersistenceIdentifier' => $formPersistenceIdentifier]);
     }
 
     /**
@@ -208,8 +223,10 @@ class FormResultsController extends FormManagerController
             ];
             foreach ($formRenderables as $renderable) {
                 $fieldValue = $resultsArray[$renderable->getIdentifier()] ?? '';
-                $convertedFieldValue = FormValueUtility::convertFormValue($renderable, $fieldValue, FormValueUtility::OUTPUT_TYPE_CSV);
-                $cleanFieldValue = trim(str_replace(self::CSV_ENCLOSURE, '\\' . self::CSV_ENCLOSURE, $convertedFieldValue));
+                $convertedFieldValue = FormValueUtility::convertFormValue($renderable, $fieldValue,
+                    FormValueUtility::OUTPUT_TYPE_CSV);
+                $cleanFieldValue = trim(str_replace(self::CSV_ENCLOSURE, '\\' . self::CSV_ENCLOSURE,
+                    $convertedFieldValue));
                 $content[] = self::CSV_ENCLOSURE . $cleanFieldValue . self::CSV_ENCLOSURE;
             }
             $csvContent[] = implode(self::CSV_DELIMITER, $content);
