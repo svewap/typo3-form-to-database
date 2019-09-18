@@ -112,6 +112,13 @@ class FormValueUtility implements SingletonInterface
                     $value = '';
                 }
                 break;
+            case 'MultiCheckbox':
+                if (is_array($value)) {
+                    $value = implode(', ', $value);
+                } else {
+                    $value = '';
+                }
+                break;
             default:
                 if (is_string($value)) {
                     $value = htmlspecialchars((string)$value);
