@@ -34,6 +34,18 @@ return [
                 'type' => 'passthrough'
             ]
         ],
+        'site_identifier' => [
+            'label' => 'site_identifier',
+            'config' => [
+                'type' => 'passthrough'
+            ]
+        ],
+        'form_plugin_uid' => [
+            'label' => 'site_identifier',
+            'config' => [
+                'type' => 'passthrough'
+            ]
+        ],
         'result' => [
             'label' => 'result',
             'config' => [

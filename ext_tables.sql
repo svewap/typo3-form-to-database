@@ -10,7 +10,10 @@ CREATE TABLE tx_formtodatabase_domain_model_formresult (
 	deleted tinyint(4) DEFAULT '0' NOT NULL,
 
 	form_persistence_identifier varchar(255) DEFAULT '' NOT NULL,
-	result mediumtext,
+	site_identifier varchar(255) DEFAULT '' NOT NULL,
+    form_plugin_uid int(11) NOT NULL,
+
+    result mediumtext,
 
 	PRIMARY KEY (uid),
 	KEY parent (pid)
