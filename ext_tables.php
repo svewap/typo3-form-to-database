@@ -15,7 +15,7 @@ if (TYPO3_MODE === 'BE') {
         'formresults',
         'after:FormFormbuilder',
         [
-            'FormResults' => 'index, show, downloadCsv, deleteFormResult'
+            'FormResults' => 'index, show, downloadCsv, deleteFormResult, updateItemListSelect, unDeleteFormDefinition'
         ],
         [
             'access' => 'user,group',

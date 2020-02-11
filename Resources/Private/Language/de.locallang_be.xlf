@@ -11,6 +11,10 @@
                 <source>Existing forms</source>
                 <target>Bestehende Formulare</target>
             </trans-unit>
+            <trans-unit id="index.deleted_forms" xml:space="preserve">
+                <source>Deleted forms</source>
+                <target>Gelöschte Formulare</target>
+            </trans-unit>
             <trans-unit id="index.number_of_results" xml:space="preserve">
                 <source>Number of results</source>
                 <target>Anzahl Resultate</target>

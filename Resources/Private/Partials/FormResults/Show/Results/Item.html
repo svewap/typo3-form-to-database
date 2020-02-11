@@ -6,12 +6,14 @@
 <tr>
 	<td>{formResult.crdate -> f:format.date(format: '{dateFormat} {timeFormat}')}</td>
 	<f:for each="{formRenderables}" as="renderable">
-		<td>
-			<f:format.raw>
-				<ftdb:formValue value="{formResult.resultAsArray.{renderable.identifier}}"
-								element="{renderable}" crop="true"/>
-			</f:format.raw>
-		</td>
+		<f:if condition="{renderable.renderingOptions.listView}">
+			<td>
+				<f:format.raw>
+					<ftdb:formValue value="{formResult.resultAsArray.{renderable.identifier}}"
+									element="{renderable}" crop="true"/>
+				</f:format.raw>
+			</td>
+		</f:if>
 	</f:for>
 	<td class="col-control nowrap">
 		<div class="btn-group" role="group">

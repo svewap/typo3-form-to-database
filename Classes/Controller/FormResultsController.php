@@ -14,10 +14,16 @@ use DateTimeZone;
 use Exception;
 use Lavitto\FormToDatabase\Domain\Model\FormResult;
 use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
+use Lavitto\FormToDatabase\Helpers\MiscHelper;
 use Lavitto\FormToDatabase\Utility\FormValueUtility;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
+use TYPO3\CMS\Core\Database\Connection;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Resource\Driver\LocalDriver;
+use TYPO3\CMS\Core\Resource\Filter\FileExtensionFilter;
+use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 use TYPO3\CMS\Extbase\Mvc\Exception\NoSuchArgumentException;
@@ -30,6 +36,9 @@ use TYPO3\CMS\Form\Domain\Exception\RenderingException;
 use TYPO3\CMS\Form\Domain\Factory\ArrayFormFactory;
 use TYPO3\CMS\Form\Domain\Model\FormDefinition;
 use TYPO3\CMS\Form\Domain\Model\FormElements\AbstractFormElement;
+use TYPO3\CMS\Form\Mvc\Property\TypeConverter\FormDefinitionArrayConverter;
+use TYPO3\CMS\Form\Slot\FilePersistenceSlot;
+use TYPO3\CMS\Form\Type\FormDefinitionArray;
 
 /**
  * Class FormResultsController
@@ -91,7 +100,9 @@ class FormResultsController extends FormManagerController
         $this->registerDocheaderButtons();
         $this->view->getModuleTemplate()->setModuleName($this->request->getPluginName() . '_' . $this->request->getControllerName());
         $this->view->getModuleTemplate()->setFlashMessageQueue($this->controllerContext->getFlashMessageQueue());
-        $this->view->assign('forms', $this->getAvailableFormDefinitions());
+        $availableFormDefinitions = $this->getAvailableFormDefinitions();
+        $this->view->assign('forms', $availableFormDefinitions);
+        $this->view->assign('deletedForms', $this->getDeletedFormDefinitions($availableFormDefinitions));
         $this->assignDefaults();
     }
 
@@ -113,14 +124,14 @@ class FormResultsController extends FormManagerController
         ]);
 
         $formResults = $this->formResultRepository->findByFormPersistenceIdentifier($formPersistenceIdentifier);
-        $formDefinition = $this->getFormDefinition($formPersistenceIdentifier);
+        $formDefinition = $this->getFormDefinitionObject($formPersistenceIdentifier, true);
         $formRenderables = $this->getFormRenderables($formDefinition);
-
         $this->registerDocheaderButtons($formPersistenceIdentifier, $formResults->count() > 0);
         $this->view->assignMultiple([
             'formResults' => $formResults,
             'formDefinition' => $formDefinition,
-            'formRenderables' => $formRenderables
+            'formRenderables' => $formRenderables,
+            'formPersistenceIdentifier' => $formPersistenceIdentifier
         ]);
         $this->assignDefaults();
     }
@@ -158,6 +169,57 @@ class FormResultsController extends FormManagerController
     }
 
     /**
+     * @param string $formDefinitionPath
+     * @param string $formIdentifier
+     * @throws \TYPO3\CMS\Extbase\Mvc\Exception\StopActionException
+     * @throws \TYPO3\CMS\Extbase\Mvc\Exception\UnsupportedRequestTypeException
+     */
+    public function unDeleteFormDefinitionAction(string $formDefinitionPath, string $formIdentifier): void
+    {
+
+            /** @var FilePersistenceSlot $formPersistenceSlot */
+            $formPersistenceSlot = GeneralUtility::makeInstance(FilePersistenceSlot::class);
+            $formPersistenceSlot->allowInvocation(
+                FilePersistenceSlot::COMMAND_FILE_MOVE,
+                str_replace('.deleted', '', $formDefinitionPath)
+            );
+        $resourceFactory = ResourceFactory::getInstance();
+//        $combinedIdentifier = $formDefinitionPath . ".{$formIdentifier}";
+        $file = $resourceFactory->getFileObjectFromCombinedIdentifier($formDefinitionPath);
+
+        $filename = "{$formIdentifier}.form.yaml";
+        $newCombinedIdentifier = $file->moveTo($file->getParentFolder(), $filename)->getCombinedIdentifier();
+        //todo1 Update form_persistence_identifier in results table - remove deleted
+        $results = $this->formResultRepository->findByFormIdentifier($formIdentifier);
+        /** @var FormResult $result */
+        foreach ($results as $result) {
+            $result->setFormPersistenceIdentifier($newCombinedIdentifier);
+            $this->formResultRepository->update($result);
+        }
+        $this->redirect('index');
+    }
+
+    /**
+     * @throws NoSuchArgumentException
+     * @throws \TYPO3\CMS\Extbase\Mvc\Exception\StopActionException
+     * @throws \TYPO3\CMS\Extbase\Mvc\Exception\UnsupportedRequestTypeException
+     */
+    public function updateItemListSelectAction() {
+        $formPersistenceIdentifier = $this->request->getArgument('formPersistenceIdentifier');
+        $formDefinition = $this->getFormDefinition($formPersistenceIdentifier);
+        $fieldSelectedState = $this->request->getArgument('field');
+        if(isset($formDefinition['renderingOptions']['fieldState'])) {
+            foreach ($formDefinition['renderingOptions']['fieldState'] as $fieldKey => &$fieldData) {
+                $fieldData['renderingOptions']['listView'] =  $fieldSelectedState[$fieldKey] ? 1 : 0;
+            }
+        };
+
+
+        $this->formPersistenceManager->save($formPersistenceIdentifier, $formDefinition);
+        $this->redirect('show',null,null,['formPersistenceIdentifier' => $this->request->getArgument('formPersistenceIdentifier')]);
+    }
+
+    /**
      * List all formDefinitions which can be loaded form persistence manager.
      * Enrich this data by a the number of results.
      *
@@ -175,17 +237,92 @@ class FormResultsController extends FormManagerController
     }
 
     /**
+     * List all representations of deleted formDefinitions which can be found in FormResults but not from persistence manager.
+     * Enrich this data by a the number of results.
+     *
+     * @return array
+     */
+    protected function getDeletedFormDefinitions($availableFormDefinitions): array
+    {
+        $accessibleDeletedFormDefinitions = [];
+        $storageFolders = $this->formPersistenceManager->getAccessibleFormStorageFolders();
+        /** @var FileExtensionFilter $filter */
+        $filter = GeneralUtility::makeInstance(FileExtensionFilter::class);
+        $filter->setAllowedFileExtensions(['deleted']);
+        foreach ($storageFolders as $storageFolder) {
+            $storageFolder->setFileAndFolderNameFilters([[$filter, 'filterFileList']]);
+            $accessibleDeletedFormDefinitions += $storageFolder->getFiles();
+        }
+        $accessibleDeletedFormDefinitions = array_map(function($val) { $val = $val->getCombinedIdentifier(); return $val;}, $accessibleDeletedFormDefinitions, []);
+
+
+        $persistenceIdentifier = array_column($availableFormDefinitions, 'persistenceIdentifier');
+
+        $webMounts = MiscHelper::getWebMounts();
+        //plugins that user currently has access to
+        $pluginUids = MiscHelper::getPluginUids($webMounts);
+        //site admins
+        $siteIdentifiers = MiscHelper::getSiteIdentifiersFromRootPids($webMounts);
+
+        /** @var QueryBuilder $queryBuilder */
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_formtodatabase_domain_model_formresult');
+        $result = $queryBuilder
+            ->select('form_persistence_identifier','form_identifier')
+            ->addSelectLiteral($queryBuilder->expr()->count('form_identifier', 'count'))
+            ->from('tx_formtodatabase_domain_model_formresult')
+            ->where(
+                $queryBuilder->expr()->orX(
+                    $queryBuilder->expr()->in('form_plugin_uid', $queryBuilder->createNamedParameter($pluginUids ? $pluginUids : [''], Connection::PARAM_STR_ARRAY)),
+                    $queryBuilder->expr()->in('site_identifier', $queryBuilder->createNamedParameter($siteIdentifiers ? $siteIdentifiers : [''], Connection::PARAM_STR_ARRAY)),
+                    //Backward compatibility with old data
+                    $queryBuilder->expr()->andX(
+                        $queryBuilder->expr()->eq('site_identifier', $queryBuilder->createNamedParameter('')),
+                        $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT))
+                    )
+                ),
+                $queryBuilder->expr()->notIn('form_persistence_identifier', $queryBuilder->createNamedParameter($persistenceIdentifier, Connection::PARAM_STR_ARRAY)),
+                $queryBuilder->expr()->in('form_persistence_identifier', $queryBuilder->createNamedParameter($accessibleDeletedFormDefinitions, Connection::PARAM_STR_ARRAY))
+
+            )->groupBy('tx_formtodatabase_domain_model_formresult.form_persistence_identifier', 'tx_formtodatabase_domain_model_formresult.form_identifier')
+            ->execute()->fetchAll();
+
+        array_walk($result, function(&$val) {
+            $val['name'] = $val['identifier'] = preg_replace("/.*\/(.*)-([a-z0-9]{13}).form.yaml.deleted/", "$1", $val['form_persistence_identifier']);
+            $val['persistenceIdentifier'] = $val['form_persistence_identifier'];
+        });
+        return $result;
+    }
+
+    /**
      * Gets a form definition by a persistence form identifier
      *
      * @param string $formPersistenceIdentifier
-     * @return FormDefinition
-     * @throws RenderingException
+     * @param bool $useFieldStateDataAsRenderables
+     * @return array
      */
-    protected function getFormDefinition(string $formPersistenceIdentifier): FormDefinition
+    protected function getFormDefinition(string $formPersistenceIdentifier, $useFieldStateDataAsRenderables = false): array
     {
         $configuration = $this->formPersistenceManager->load($formPersistenceIdentifier);
         $configuration['finishers'] = [];
+        if($useFieldStateDataAsRenderables && isset($configuration['renderingOptions']['fieldState'])) {
+            unset($configuration['renderables'][0]['renderables']);
+            $configuration['renderables'][0]['renderables'] = array_values($configuration['renderingOptions']['fieldState']);
+            $configuration['renderables'] = array_intersect_key($configuration['renderables'], [0=>1]);
+        }
+        return $configuration;
+    }
 
+    /**
+     * Gets a form definition by a persistence form identifier
+     *
+     * @param string $formPersistenceIdentifier
+     * @param bool $useFieldStateDataAsRenderables
+     * @return FormDefinition
+     * @throws RenderingException
+     */
+    protected function getFormDefinitionObject(string $formPersistenceIdentifier, $useFieldStateDataAsRenderables = false): FormDefinition
+    {
+        $configuration = $this->getFormDefinition($formPersistenceIdentifier, $useFieldStateDataAsRenderables);
         /** @var ArrayFormFactory $arrayFormFactory */
         $arrayFormFactory = $this->objectManager->get(ArrayFormFactory::class);
         return $arrayFormFactory->build($configuration);
@@ -222,7 +359,7 @@ class FormResultsController extends FormManagerController
         $csvContent = [];
 
         $formResults = $this->formResultRepository->findByFormPersistenceIdentifier($formPersistenceIdentifier);
-        $formDefinition = $this->getFormDefinition($formPersistenceIdentifier);
+        $formDefinition = $this->getFormDefinitionObject($formPersistenceIdentifier, true);
         $formRenderables = $this->getFormRenderables($formDefinition);
 
         $header = [

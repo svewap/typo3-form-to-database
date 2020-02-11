@@ -34,6 +34,12 @@ return [
                 'type' => 'passthrough'
             ]
         ],
+        'form_identifier' => [
+            'label' => 'form_identifier',
+            'config' => [
+                'type' => 'passthrough'
+            ]
+        ],
         'site_identifier' => [
             'label' => 'site_identifier',
             'config' => [

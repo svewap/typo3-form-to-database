@@ -30,5 +30,8 @@
 			</f:be.infobox>
 		</f:else>
 	</f:if>
+	<f:if condition="{deletedForms}">
+		<f:render partial="FormResults/Index/DeletedResults" arguments="{forms: deletedForms}"/>
+	</f:if>
 </f:section>
 </html>

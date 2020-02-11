@@ -9,6 +9,9 @@
             <trans-unit id="index.existing_forms" xml:space="preserve">
                 <source>Existing forms</source>
             </trans-unit>
+            <trans-unit id="index.deleted_forms" xml:space="preserve">
+                <source>Deleted forms</source>
+            </trans-unit>
             <trans-unit id="index.number_of_results" xml:space="preserve">
                 <source>Number of results</source>
             </trans-unit>
@@ -44,6 +47,21 @@
             </trans-unit>
             <trans-unit id="show.buttons.delete.description" xml:space="preserve">
                 <source>Are you sure you want to delete the form result?</source>
+            </trans-unit>
+            <trans-unit id="index.buttons.undelete" xml:space="preserve">
+                <source>Restore form</source>
+            </trans-unit>
+            <trans-unit id="show.itemListSelect.header" xml:space="preserve">
+                <source>Fields in result list</source>
+            </trans-unit>
+            <trans-unit id="show.itemListSelect.buttons.saveandclose" xml:space="preserve">
+                <source>Fields in result list</source>
+            </trans-unit>
+            <trans-unit id="show.itemListSelect.table.elementtype" xml:space="preserve">
+                <source>Element type</source>
+            </trans-unit>
+            <trans-unit id="show.itemListSelect.table.identifier" xml:space="preserve">
+                <source>Identifier</source>
             </trans-unit>
         </body>
     </file>

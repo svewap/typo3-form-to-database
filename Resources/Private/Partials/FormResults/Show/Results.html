@@ -22,9 +22,18 @@
 									key="LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.crdate"/>
 						</th>
 						<f:for each="{formRenderables}" as="renderable">
-							<th>{renderable.label}</th>
+							<f:if condition="{renderable.renderingOptions.listView}">
+								<th>{renderable.label}</th>
+							</f:if>
 						</f:for>
-						<th>&nbsp;</th>
+						<th class="col-control nowrap">
+							<div class="btn-group" role="group">
+								<a href="#" class="btn btn-default" data-toggle="modal"
+											   data-target="#itemListSelect">
+								<core:icon identifier="actions-document-view"/>
+								</a>
+							</div>
+						</th>
 					</tr>
 					</thead>
 					<tbody>
@@ -39,6 +48,7 @@
 	<f:for each="{paginatedFormResults}" as="formResult">
 		<f:render partial="FormResults/Show/Results/ItemDetail" arguments="{_all}"/>
 	</f:for>
+	<f:render partial="FormResults/Show/ItemListSelect" arguments="{_all}"/>
 </f:be.widget.paginate>
 
 </html>
