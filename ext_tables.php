@@ -20,7 +20,7 @@ if (TYPO3_MODE === 'BE') {
         [
             'access' => 'user,group',
             'icon' => 'EXT:form_to_database/Resources/Public/Icons/Extension.svg',
-            'labels' => 'LLL:EXT:form_to_database/Resources/Private/Language/locallang_mod.xml',
+            'labels' => 'LLL:EXT:form_to_database/Resources/Private/Language/locallang_mod.xlf',
             'navigationComponentId' => '',
             'inheritNavigationComponentFromMainModule' => false
         ]
