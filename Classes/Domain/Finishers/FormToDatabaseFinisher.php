@@ -10,6 +10,7 @@ namespace Lavitto\FormToDatabase\Domain\Finishers;
 
 use Lavitto\FormToDatabase\Domain\Model\FormResult;
 use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
 use TYPO3\CMS\Extbase\Domain\Model\FileReference;
 use TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException;
@@ -33,6 +34,8 @@ class FormToDatabaseFinisher extends AbstractFinisher
     protected $formResultRepository;
 
     /**
+     * The ConfigurationManagerInterface
+     *
      * @var ConfigurationManagerInterface
      */
     protected $configurationManager;
@@ -47,6 +50,11 @@ class FormToDatabaseFinisher extends AbstractFinisher
         $this->formResultRepository = $formResultRepository;
     }
 
+    /**
+     * Injects the ConfigurationManagerInterface
+     *
+     * @param ConfigurationManagerInterface $configurationManager
+     */
     public function injectConfigurationManager(ConfigurationManagerInterface $configurationManager): void
     {
         $this->configurationManager = $configurationManager;
@@ -61,6 +69,7 @@ class FormToDatabaseFinisher extends AbstractFinisher
     {
         $formDefinition = $this->finisherContext->getFormRuntime()->getFormDefinition();
         if ($formDefinition instanceof FormDefinition) {
+            /** @noinspection PhpInternalEntityUsedInspection */
             $formPersistenceIdentifier = $formDefinition->getPersistenceIdentifier();
 
             $formValues = [];
@@ -75,7 +84,9 @@ class FormToDatabaseFinisher extends AbstractFinisher
                 }
             }
 
-            $formPluginUid = array_pop(explode('-', $formDefinition->getIdentifier()));
+            $formPluginUidArray = GeneralUtility::intExplode('-', $formDefinition->getIdentifier());
+            $formPluginUid = (int)array_pop($formPluginUidArray);
+
             $formResult = new FormResult();
             $formResult->setFormPersistenceIdentifier($formPersistenceIdentifier);
             $formResult->setSiteIdentifier($GLOBALS['TYPO3_REQUEST']->getAttribute('site')->getIdentifier());

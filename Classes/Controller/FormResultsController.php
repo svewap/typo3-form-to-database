@@ -1,4 +1,5 @@
-<?php
+<?php /** @noinspection PhpInternalEntityUsedInspection */
+
 /**
  * This file is part of the "form_to_database" Extension for TYPO3 CMS.
  *
@@ -20,6 +21,10 @@ use TYPO3\CMS\Core\Resource\Driver\LocalDriver;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 use TYPO3\CMS\Extbase\Mvc\Exception\NoSuchArgumentException;
+use TYPO3\CMS\Extbase\Mvc\Exception\StopActionException;
+use TYPO3\CMS\Extbase\Mvc\Exception\UnsupportedRequestTypeException;
+use TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException;
+use TYPO3\CMS\Extbase\Persistence\Exception\InvalidQueryException;
 use TYPO3\CMS\Form\Controller\FormManagerController;
 use TYPO3\CMS\Form\Domain\Exception\RenderingException;
 use TYPO3\CMS\Form\Domain\Factory\ArrayFormFactory;
@@ -69,7 +74,9 @@ class FormResultsController extends FormManagerController
     /**
      * Displays the Form Overview
      *
+     * @throws InvalidQueryException
      * @internal
+     * @noinspection PhpUndefinedMethodInspection
      */
     public function indexAction(): void
     {
@@ -84,7 +91,9 @@ class FormResultsController extends FormManagerController
      * Shows the results of a form
      *
      * @param string $formPersistenceIdentifier
+     * @throws InvalidQueryException
      * @throws RenderingException
+     * @noinspection PhpUndefinedMethodInspection
      */
     public function showAction(string $formPersistenceIdentifier): void
     {
@@ -129,9 +138,9 @@ class FormResultsController extends FormManagerController
      * Deletes a form result and forwards to the show action
      *
      * @param FormResult $formResult
-     * @throws \TYPO3\CMS\Extbase\Mvc\Exception\StopActionException
-     * @throws \TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException
-     * @throws \TYPO3\CMS\Extbase\Mvc\Exception\UnsupportedRequestTypeException
+     * @throws StopActionException
+     * @throws IllegalObjectTypeException
+     * @throws UnsupportedRequestTypeException
      */
     public function deleteFormResultAction(FormResult $formResult): void
     {
@@ -145,6 +154,7 @@ class FormResultsController extends FormManagerController
      * Enrich this data by a the number of results.
      *
      * @return array
+     * @throws InvalidQueryException
      */
     protected function getAvailableFormDefinitions(): array
     {
@@ -196,6 +206,7 @@ class FormResultsController extends FormManagerController
      *
      * @param string $formPersistenceIdentifier
      * @return string
+     * @throws InvalidQueryException
      * @throws RenderingException
      */
     protected function getCsvContent(string $formPersistenceIdentifier): string
@@ -269,6 +280,7 @@ class FormResultsController extends FormManagerController
      *
      * @param string|null $formPersistenceIdentifier
      * @param bool $showCsvDownload
+     * @noinspection PhpUndefinedMethodInspection
      */
     protected function registerDocheaderButtons(
         string $formPersistenceIdentifier = null,

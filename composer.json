@@ -36,7 +36,9 @@
     "typo3/cms-fluid": "^8.7 || ^9.5",
     "typo3/cms-frontend": "^8.7 || ^9.5",
     "typo3/cms-backend": "^8.7 || ^9.5",
-    "typo3/cms-form": "^8.7 || ^9.5"
+    "typo3/cms-form": "^8.7 || ^9.5",
+    "ext-json": "*",
+    "ext-pdo": "*"
   },
   "replace": {
     "lavitto/typo3-form-to-database": "self.version"

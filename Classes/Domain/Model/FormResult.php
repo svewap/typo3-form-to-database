@@ -41,7 +41,7 @@ class FormResult extends AbstractEntity
      *
      * @var integer
      */
-    protected $formPluginUid;
+    protected $formPluginUid = 0;
 
     /**
      * The form result as json
@@ -85,6 +85,8 @@ class FormResult extends AbstractEntity
     }
 
     /**
+     * Gets the siteIdentifier
+     *
      * @return string
      */
     public function getSiteIdentifier(): string
@@ -93,6 +95,8 @@ class FormResult extends AbstractEntity
     }
 
     /**
+     * Sets the siteIdentifier
+     *
      * @param string $siteIdentifier
      */
     public function setSiteIdentifier(string $siteIdentifier): void
@@ -101,6 +105,8 @@ class FormResult extends AbstractEntity
     }
 
     /**
+     * Gets the formPluginUid
+     *
      * @return int
      */
     public function getFormPluginUid(): int
@@ -109,6 +115,8 @@ class FormResult extends AbstractEntity
     }
 
     /**
+     * Sets the formPluginUid
+     *
      * @param int $formPluginUid
      */
     public function setFormPluginUid(int $formPluginUid): void

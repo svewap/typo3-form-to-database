@@ -149,7 +149,8 @@ class FormValueUtility implements SingletonInterface
         $resourceFactory = ResourceFactory::getInstance();
         try {
             $fileObject = $resourceFactory->getFileObjectFromCombinedIdentifier($combinedFileIdentifier);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
+            $fileObject = null;
         }
         if ($fileObject instanceof FileInterface) {
             $publicUrl = PathUtility::getAbsoluteWebPath('../' . $fileObject->getPublicUrl());
@@ -182,6 +183,7 @@ class FormValueUtility implements SingletonInterface
      *
      * @param string $text
      * @return string
+     * @noinspection PhpInternalEntityUsedInspection
      */
     protected static function cropText(string $text): string
     {
