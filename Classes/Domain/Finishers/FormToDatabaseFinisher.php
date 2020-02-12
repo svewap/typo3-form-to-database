@@ -10,6 +10,7 @@ namespace Lavitto\FormToDatabase\Domain\Finishers;
 
 use Lavitto\FormToDatabase\Domain\Model\FormResult;
 use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
+use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
 use TYPO3\CMS\Extbase\Domain\Model\FileReference;
 use TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException;
 use TYPO3\CMS\Form\Domain\Finishers\AbstractFinisher;
@@ -32,6 +33,11 @@ class FormToDatabaseFinisher extends AbstractFinisher
     protected $formResultRepository;
 
     /**
+     * @var ConfigurationManagerInterface
+     */
+    protected $configurationManager;
+
+    /**
      * Injects the FormResultRepository
      *
      * @param FormResultRepository $formResultRepository
@@ -39,6 +45,11 @@ class FormToDatabaseFinisher extends AbstractFinisher
     public function injectFormResultRepository(FormResultRepository $formResultRepository): void
     {
         $this->formResultRepository = $formResultRepository;
+    }
+
+    public function injectConfigurationManager(ConfigurationManagerInterface $configurationManager): void
+    {
+        $this->configurationManager = $configurationManager;
     }
 
     /**
@@ -64,9 +75,13 @@ class FormToDatabaseFinisher extends AbstractFinisher
                 }
             }
 
+            $formPluginUid = array_pop(explode('-', $formDefinition->getIdentifier()));
             $formResult = new FormResult();
             $formResult->setFormPersistenceIdentifier($formPersistenceIdentifier);
+            $formResult->setSiteIdentifier($GLOBALS['TYPO3_REQUEST']->getAttribute('site')->getIdentifier());
+            $formResult->setPid($GLOBALS['TSFE']->id);
             $formResult->setResultFromArray($formValues);
+            $formResult->setFormPluginUid($formPluginUid);
 
             $this->formResultRepository->add($formResult);
         }

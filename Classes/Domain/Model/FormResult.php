@@ -29,6 +29,21 @@ class FormResult extends AbstractEntity
     protected $formPersistenceIdentifier = '';
 
     /**
+     * The Site Identifier
+     *
+     * @see config/sites/{identifier}/config.yaml
+     * @var string
+     */
+    protected $siteIdentifier = '';
+
+    /**
+     * Uid of the form plugin content element
+     *
+     * @var integer
+     */
+    protected $formPluginUid;
+
+    /**
      * The form result as json
      *
      * @var string
@@ -67,6 +82,38 @@ class FormResult extends AbstractEntity
     public function setFormPersistenceIdentifier(string $formPersistenceIdentifier): void
     {
         $this->formPersistenceIdentifier = $formPersistenceIdentifier;
+    }
+
+    /**
+     * @return string
+     */
+    public function getSiteIdentifier(): string
+    {
+        return $this->siteIdentifier;
+    }
+
+    /**
+     * @param string $siteIdentifier
+     */
+    public function setSiteIdentifier(string $siteIdentifier): void
+    {
+        $this->siteIdentifier = $siteIdentifier;
+    }
+
+    /**
+     * @return int
+     */
+    public function getFormPluginUid(): int
+    {
+        return $this->formPluginUid;
+    }
+
+    /**
+     * @param int $formPluginUid
+     */
+    public function setFormPluginUid(int $formPluginUid): void
+    {
+        $this->formPluginUid = $formPluginUid;
     }
 
     /**
