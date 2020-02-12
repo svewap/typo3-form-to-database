@@ -72,6 +72,14 @@ class FormResultsController extends FormManagerController
     }
 
     /**
+     * Initialize Show Action
+     */
+    public function initializeShowAction(): void
+    {
+        $this->getPageRenderer()->addCssFile('EXT:form_to_database/Resources/Public/Css/ShowStyles.css');
+    }
+
+    /**
      * Displays the Form Overview
      *
      * @throws InvalidQueryException
