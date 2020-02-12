@@ -12,11 +12,12 @@ use DateInterval;
 use DateTime;
 use Exception;
 use Lavitto\FormToDatabase\Utility\FormValueUtility;
+use PDO;
+use TYPO3\CMS\Backend\Tree\Repository\PageTreeRepository;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
-use TYPO3\CMS\Core\Database\QueryGenerator;
 use TYPO3\CMS\Core\Exception\SiteNotFoundException;
-use TYPO3\CMS\Core\Routing\SiteMatcher;
+use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Persistence\Exception\InvalidQueryException;
@@ -43,6 +44,13 @@ class FormResultRepository extends Repository
     ];
 
     /**
+     * The PageTreeRepository
+     *
+     * @var PageTreeRepository
+     */
+    protected $pageTreeRepository;
+
+    /**
      * Ignore storage pid
      */
     public function initializeObject(): void
@@ -54,10 +62,21 @@ class FormResultRepository extends Repository
     }
 
     /**
+     * Injects the PageTreeRepository
+     *
+     * @param PageTreeRepository $pageTreeRepository
+     */
+    public function injectPageTreeRepository(PageTreeRepository $pageTreeRepository): void
+    {
+        $this->pageTreeRepository = $pageTreeRepository;
+    }
+
+    /**
      * Gets all results by form definition
      *
      * @param string $formPersistenceIdentifier
      * @return QueryResultInterface
+     * @throws InvalidQueryException
      */
     public function findByFormPersistenceIdentifier(string $formPersistenceIdentifier): QueryResultInterface
     {
@@ -69,6 +88,7 @@ class FormResultRepository extends Repository
      *
      * @param string $formPersistenceIdentifier
      * @return int
+     * @throws InvalidQueryException
      */
     public function countByFormPersistenceIdentifier(string $formPersistenceIdentifier): int
     {
@@ -86,44 +106,45 @@ class FormResultRepository extends Repository
     {
         $query = $this->createQuery();
         $webMounts = $this->getWebMounts();
-        $siteIdentifiers = $this->getSiteIdentifiersFromRootPids($webMounts);
-        $pluginUids = $this->getPluginUids($webMounts);
-
-        $query->matching(
-            $query->logicalAnd([
-                $query->equals('formPersistenceIdentifier', $formPersistenceIdentifier),
-                $query->logicalOr([
-                    $query->in('formPluginUid', $pluginUids),
-                    $query->in('siteIdentifier', $siteIdentifiers),
-                    //To include all records created before pid and siteIdentifier was taken into account
-                    $query->logicalAnd([
-                        $query->equals('siteIdentifier', ''),
-                        $query->equals('pid', 0)
+        if (empty($webMounts) === false) {
+            $siteIdentifiers = $this->getSiteIdentifiersFromRootPids($webMounts);
+            $pluginUids = $this->getPluginUids($webMounts);
+            $query->matching(
+                $query->logicalAnd([
+                    $query->equals('formPersistenceIdentifier', $formPersistenceIdentifier),
+                    $query->logicalOr([
+                        $query->in('formPluginUid', $pluginUids),
+                        $query->in('siteIdentifier', $siteIdentifiers),
+                        // To include all records created before pid and siteIdentifier was taken into account
+                        $query->logicalAnd([
+                            $query->equals('siteIdentifier', ''),
+                            $query->equals('pid', 0)
+                        ])
                     ])
                 ])
-            ])
-        );
+            );
+        }
         return $query;
     }
 
     /**
-     * Get webmounts of BE User
+     * Get webMounts of BE User
      *
      * @return array
      */
-    protected function getWebMounts () {
-        $webMounts = [];
-        if ($GLOBALS['BE_USER']->groupData['webmounts']) {
-            $webMounts = GeneralUtility::trimExplode(',', $GLOBALS['BE_USER']->groupData['webmounts'], 1);
-        }
-        return $webMounts;
+    protected function getWebMounts(): array
+    {
+        return $GLOBALS['BE_USER']->returnWebmounts();
     }
 
     /**
-     * @param $webMounts
+     * Gets the plugin uids
+     *
+     * @param array $webMounts
      * @return array
      */
-    protected function getPluginUids($webMounts) {
+    protected function getPluginUids(array $webMounts): array
+    {
         $pids = $this->getTreePids($webMounts);
         /** @var QueryBuilder $queryBuilder */
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tt_content');
@@ -133,7 +154,8 @@ class FormResultRepository extends Repository
             ->from('tt_content')
             ->where(
                 $queryBuilder->expr()->in('pid', $pids),
-                $queryBuilder->expr()->eq('CType', $queryBuilder->createNamedParameter('form_formframework', \PDO::PARAM_STR))
+                $queryBuilder->expr()->eq('CType',
+                    $queryBuilder->createNamedParameter('form_formframework', PDO::PARAM_STR))
             )
             ->execute()->fetchAll();
         return array_column($result, 'uid');
@@ -145,37 +167,60 @@ class FormResultRepository extends Repository
      * @param array $webMounts
      * @return array
      */
-    function getTreePids($webMounts = 0){
-        $childPidsArray = [];
-        if($webMounts) {
-            $depth = 99;
-            $childPidsArray = [];
-            /** @var QueryGenerator $queryGenerator */
-            $queryGenerator = GeneralUtility::makeInstance( QueryGenerator::class );
+    protected function getTreePids(array $webMounts): array
+    {
+        $pidsArray = [];
+        if ($webMounts !== null) {
             foreach ($webMounts as $webMount) {
-                $childPids = $queryGenerator->getTreeList($webMount, $depth, 0, 1); //Will be a string like 1,2,3
-                $childPidsArray = array_merge($childPidsArray, explode(',', $childPids ));
+                $pageTree = $this->pageTreeRepository->getTree((int)$webMount);
+                $this->addTreeToPidsArray($pidsArray, $pageTree);
             }
         }
-        return array_unique($childPidsArray);
+        return array_unique($pidsArray);
+    }
+
+    /**
+     * Adds the uids of pages from pagetree to an array
+     *
+     * @param $pidsArray
+     * @param array $pageTree
+     */
+    protected function addTreeToPidsArray(&$pidsArray, array $pageTree): void
+    {
+        $pidsArray[] = $pageTree['uid'];
+        if (empty($pageTree['_children']) === false) {
+            foreach ($pageTree['_children'] as $children) {
+                $this->addTreeToPidsArray($pidsArray, $children);
+            }
+        }
     }
 
     /**
      * Get SiteIdentifiers from Root Pids
      *
+     * @param array $webMounts
      * @return array
      */
-    protected function getSiteIdentifiersFromRootPids($webMounts) {
+    protected function getSiteIdentifiersFromRootPids(array $webMounts): array
+    {
         $siteIdentifiers = [];
         if ($webMounts) {
-            //find site identifiers from mountpoints
+            // find site identifiers from mountpoints
             /** @var SiteFinder $siteMatcher */
             $siteMatcher = GeneralUtility::makeInstance(SiteFinder::class);
             foreach ($webMounts as $webMount) {
-                try {
-                    $site = $siteMatcher->getSiteByRootPageId((int)$webMount);
-                    $siteIdentifiers[] = $site->getIdentifier();
-                } catch (SiteNotFoundException $exception) {}
+                if ((int)$webMount === 0) {
+                    /** @var Site $site */
+                    foreach ($siteMatcher->getAllSites() as $site) {
+                        $siteIdentifiers[] = $site->getIdentifier();
+                    }
+                } else {
+                    try {
+                        $site = $siteMatcher->getSiteByPageId((int)$webMount);
+                        $siteIdentifiers[] = $site->getIdentifier();
+                    } catch (SiteNotFoundException $exception) {
+                    }
+                }
             }
         }
         return $siteIdentifiers;
