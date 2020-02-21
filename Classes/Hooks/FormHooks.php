@@ -154,12 +154,12 @@ class FormHooks
                 $fieldCount++;
                 //New field - field identifier does not exist in state
                 if(!isset($formDefinition['renderingOptions']['fieldState'][$field['identifier']])) {
-                    $this->updateNewFieldIdentifierAndAddToState($field, $formDefinition);
-                    $this->updateStateListViewState($formDefinition, $fieldCount);
+                    $this->updateNewFieldIdentifierAndAddToState($formDefinition, $field);
+                    $this->updateStateListViewState($formDefinition, $field, $fieldCount);
                 //New field - but identifier exists(deleted field) in state
                 } elseif($formDefinition['renderingOptions']['fieldState'][$field['identifier']]['renderingOptions']['deleted'] === 1) {
-                    $this->updateNewFieldIdentifierAndAddToState($field, $formDefinition);
-                    $this->updateStateListViewState($formDefinition, $fieldCount);
+                    $this->updateNewFieldIdentifierAndAddToState($formDefinition, $field);
+                    $this->updateStateListViewState($formDefinition, $field, $fieldCount);
                 //Existing field - update state
                 } else {
                     $formDefinition['renderingOptions']['fieldState'][$field['identifier']] = array_merge($formDefinition['renderingOptions']['fieldState'][$field['identifier']], $field);
@@ -189,14 +189,14 @@ class FormHooks
      * @param $field
      * @param $formDefinition
      */
-    protected function updateNewFieldIdentifierAndAddToState(&$field, &$formDefinition) {
+    protected function updateNewFieldIdentifierAndAddToState(&$formDefinition, &$field) {
         //  Opdatere identifier med $fieldTypesNextIdentifier
         $field['identifier'] = $this->getNextIdentifier($field['type'], $field['identifier']);
         //  Tilføje ny til fieldState
         $formDefinition['renderingOptions']['fieldState'][$field['identifier']] = $field;
     }
 
-    protected function updateStateListViewState(&$formDefinition, $fieldCount) {
+    protected function updateStateListViewState(&$formDefinition, $field, $fieldCount) {
         if(!isset($formDefinition['renderingOptions']['fieldState'][$field['identifier']]['renderingOptions']['listView'])) {
             if($fieldCount <= $this->enableListViewUntilCount) {
                 $formDefinition['renderingOptions']['fieldState'][$field['identifier']]['renderingOptions']['listView'] = 1;
