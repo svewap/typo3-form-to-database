@@ -5,6 +5,7 @@ namespace Lavitto\FormToDatabase\Hooks;
 
 use Lavitto\FormToDatabase\Domain\Model\FormResult;
 use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
+use Lavitto\FormToDatabase\Utility\FormDefinitionUtility;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
@@ -105,133 +106,8 @@ class FormHooks
      * @return mixed
      */
     public function beforeFormSave($formPersistenceIdentifier, $formDefinition) {
-        //If no state exists - create state from current fields
-        if(!isset($formDefinition['renderingOptions']['fieldState'])) {
-            $formDefinition['renderingOptions']['fieldState'] = $this->getFieldsFromFormDefinition($formDefinition);
-            $fieldCount = 0;
-            //Mark all fields in state as not deleted
-            $formDefinition['renderingOptions']['fieldState'] = array_map(function ($field) use (&$fieldCount) {
-                $fieldCount++;
-                $field['renderingOptions']['deleted'] = 0;
-                $field['renderingOptions']['listView'] = $fieldCount <= $this->enableListViewUntilCount ? 1: 0;
-                return $field;
-                }, $formDefinition['renderingOptions']['fieldState'] );
-        }
-
-        //Make map of next identifier for each field type
-        $this->makeNextIdentifiersMap($formDefinition['renderingOptions']['fieldState']);
-
-        //Update fields and field state
-        $formDefinition = $this->updateFormDefinition($formDefinition);
-
-        return $formDefinition;
-    }
-
-    /**
-     * @param $formDefinition
-     * @return array
-     */
-    protected function getFieldsFromFormDefinition($formDefinition) {
-        $fields = [];
-        foreach ($formDefinition['renderables'] as $steps) {
-            foreach ($steps['renderables'] as $field) {
-                $fields[$field['identifier']] = $field;
-            }
-        }
-        return $fields;
-    }
-
-    /**
-     * Make sure that field identifiers are unique (identifiers of deleted fields are not reused)
-     * Field state is saved to keep track of old fields
-     * @param $formDefinition
-     * @return mixed
-     */
-    protected function updateFormDefinition($formDefinition) {
-        $fieldCount = 0;
-        foreach ($formDefinition['renderables'] as &$steps) {
-            foreach($steps['renderables'] as &$field) {
-                $fieldCount++;
-                //New field - field identifier does not exist in state
-                if(!isset($formDefinition['renderingOptions']['fieldState'][$field['identifier']])) {
-                    $this->updateNewFieldIdentifierAndAddToState($formDefinition, $field);
-                    $this->updateStateListViewState($formDefinition, $field, $fieldCount);
-                //New field - but identifier exists(deleted field) in state
-                } elseif($formDefinition['renderingOptions']['fieldState'][$field['identifier']]['renderingOptions']['deleted'] === 1) {
-                    $this->updateNewFieldIdentifierAndAddToState($formDefinition, $field);
-                    $this->updateStateListViewState($formDefinition, $field, $fieldCount);
-                //Existing field - update state
-                } else {
-                    $formDefinition['renderingOptions']['fieldState'][$field['identifier']] = array_merge($formDefinition['renderingOptions']['fieldState'][$field['identifier']], $field);
-                }
-                $formDefinition['renderingOptions']['fieldState'][$field['identifier']]['active'] = 1;
-            }
-        }
-
-        //Mark all fields that are found in renderables as deleted in state
-        $this->updateStateDeletedState($formDefinition);
-
-        return $formDefinition;
-    }
-
-    /**
-     * @param $formDefinition
-     */
-    protected function updateStateDeletedState(&$formDefinition) {
-        $formDefinition['renderingOptions']['fieldState'] = array_map(function ($field) {
-            $field['renderingOptions']['deleted'] = isset($field['active']) ? 0 : 1;
-            unset($field['active']);
-            return $field;
-        }, $formDefinition['renderingOptions']['fieldState'] );
-    }
-
-    /**
-     * @param $field
-     * @param $formDefinition
-     */
-    protected function updateNewFieldIdentifierAndAddToState(&$formDefinition, &$field) {
-        //  Opdatere identifier med $fieldTypesNextIdentifier
-        $field['identifier'] = $this->getNextIdentifier($field['type'], $field['identifier']);
-        //  Tilføje ny til fieldState
-        $formDefinition['renderingOptions']['fieldState'][$field['identifier']] = $field;
-    }
-
-    protected function updateStateListViewState(&$formDefinition, $field, $fieldCount) {
-        if(!isset($formDefinition['renderingOptions']['fieldState'][$field['identifier']]['renderingOptions']['listView'])) {
-            if($fieldCount <= $this->enableListViewUntilCount) {
-                $formDefinition['renderingOptions']['fieldState'][$field['identifier']]['renderingOptions']['listView'] = 1;
-            } else {
-                $formDefinition['renderingOptions']['fieldState'][$field['identifier']]['renderingOptions']['listView'] = 0;
-            }
-        }
-
-    }
-
-    /**
-     * @param $fieldState
-     */
-    protected function makeNextIdentifiersMap($fieldState) {
-        foreach ($fieldState as $identifier => &$field) {
-            list($identifierText, $identifierNumber) = explode('-', $field['identifier']);
-
-            if(!isset($this->fieldTypesNextIdentifier[$field['type']])) {
-                $this->fieldTypesNextIdentifier[$field['type']] = ['text' => $identifierText, 'number' => $identifierNumber];
-            } else {
-                $this->fieldTypesNextIdentifier[$field['type']] = ['text' => $identifierText, 'number' => max($this->fieldTypesNextIdentifier[$field['type']]['number'], $identifierNumber)];
-            }
-        }
-        array_walk($this->fieldTypesNextIdentifier, function (&$val) { $val['number']++; });
-    }
-
-    /**
-     * @param $type
-     * @return int
-     */
-    protected function getNextIdentifier($type, $identifier) {
-        if(isset($this->fieldTypesNextIdentifier[$type])) {
-            $identifier = $this->fieldTypesNextIdentifier[$type]['text'] . '-' . $this->fieldTypesNextIdentifier[$type]['number'];
-            $this->fieldTypesNextIdentifier[$type]['number']++;
-        }
-        return $identifier;
+        /** @var FormDefinitionUtility $formDefinitionUtility */
+        $formDefinitionUtility = GeneralUtility::makeInstance(FormDefinitionUtility::class);
+        return $formDefinitionUtility->updateFormDefinition($formDefinition);
     }
 }

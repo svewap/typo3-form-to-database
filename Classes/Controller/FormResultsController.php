@@ -15,6 +15,7 @@ use Exception;
 use Lavitto\FormToDatabase\Domain\Model\FormResult;
 use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
 use Lavitto\FormToDatabase\Helpers\MiscHelper;
+use Lavitto\FormToDatabase\Utility\FormDefinitionUtility;
 use Lavitto\FormToDatabase\Utility\FormValueUtility;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Core\Database\Connection;
@@ -207,6 +208,10 @@ class FormResultsController extends FormManagerController
     public function updateItemListSelectAction() {
         $formPersistenceIdentifier = $this->request->getArgument('formPersistenceIdentifier');
         $formDefinition = $this->getFormDefinition($formPersistenceIdentifier);
+        /** @var FormDefinitionUtility $formDefinitionUtility */
+        $formDefinitionUtility = GeneralUtility::makeInstance(FormDefinitionUtility::class);
+        $formDefinitionUtility->addFieldStateIfDoesNotExist($formDefinition);
+
         $fieldSelectedState = $this->request->getArgument('field');
         if(isset($formDefinition['renderingOptions']['fieldState'])) {
             foreach ($formDefinition['renderingOptions']['fieldState'] as $fieldKey => &$fieldData) {
@@ -216,7 +221,7 @@ class FormResultsController extends FormManagerController
 
 
         $this->formPersistenceManager->save($formPersistenceIdentifier, $formDefinition);
-        $this->redirect('show',null,null,['formPersistenceIdentifier' => $this->request->getArgument('formPersistenceIdentifier')]);
+        $this->redirect('show', null, null, ['formPersistenceIdentifier' => $this->request->getArgument('formPersistenceIdentifier')]);
     }
 
     /**
@@ -304,7 +309,14 @@ class FormResultsController extends FormManagerController
     {
         $configuration = $this->formPersistenceManager->load($formPersistenceIdentifier);
         $configuration['finishers'] = [];
-        if($useFieldStateDataAsRenderables && isset($configuration['renderingOptions']['fieldState'])) {
+
+        if($useFieldStateDataAsRenderables) {
+            //Ensure that fieldState exists
+            /** @var FormDefinitionUtility $formDefinitionUtility */
+            $formDefinitionUtility = GeneralUtility::makeInstance(FormDefinitionUtility::class);
+            $formDefinitionUtility->addFieldStateIfDoesNotExist($configuration, true);
+
+            //Use fieldState as renderables instead of renderables
             unset($configuration['renderables'][0]['renderables']);
             $configuration['renderables'][0]['renderables'] = array_values($configuration['renderingOptions']['fieldState']);
             $configuration['renderables'] = array_intersect_key($configuration['renderables'], [0=>1]);
