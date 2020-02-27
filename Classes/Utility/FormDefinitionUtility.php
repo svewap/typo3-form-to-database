@@ -25,6 +25,8 @@ class FormDefinitionUtility
     /** @var int $enableListViewUntilCount */
     protected $enableListViewUntilCount = 4;
 
+    protected $fieldAttributeFilterKeys = ['identifier', 'label', 'type'];
+
     /**
      * @param array|FormDefinition $formDefinition
      * @param bool $enableAllInListView
@@ -69,11 +71,19 @@ class FormDefinitionUtility
             foreach ($renderables as $steps) {
                 if(!$steps['renderables']) continue;
                 foreach ($steps['renderables'] as $field) {
-                    $fields[$field['identifier']] = array_intersect_key($field, ['identifier' => 1, 'label' => 1, 'type' => 1]);
+                    $fields[$field['identifier']] = $this->filterFieldAttributes($field);
                 }
             }
         }
         return $fields;
+    }
+
+    /**
+     * @param $field
+     * @return array
+     */
+    protected function filterFieldAttributes($field) {
+        return array_intersect_key($field, array_flip($this->fieldAttributeFilterKeys));
     }
 
     /**
@@ -103,7 +113,7 @@ class FormDefinitionUtility
                     $this->updateListViewState($formDefinition, $field, $fieldCount);
                     //Existing field - update state
                 } else {
-                    $formDefinition['renderingOptions']['fieldState'][$field['identifier']] = array_merge($formDefinition['renderingOptions']['fieldState'][$field['identifier']], $field);
+                    $formDefinition['renderingOptions']['fieldState'][$field['identifier']] = array_merge($formDefinition['renderingOptions']['fieldState'][$field['identifier']], $this->filterFieldAttributes($field));
                 }
                 $formDefinition['renderingOptions']['fieldState'][$field['identifier']]['active'] = 1;
             }
@@ -111,7 +121,6 @@ class FormDefinitionUtility
 
         //Mark all fields that are found in renderables as deleted in state
         $this->updateStateDeletedState($formDefinition);
-
         return $formDefinition;
     }
 
@@ -159,7 +168,7 @@ class FormDefinitionUtility
      */
     protected function addFieldToState(&$formDefinition, $field) {
         //  Tilføje ny til fieldState
-        $formDefinition['renderingOptions']['fieldState'][$field['identifier']] = $field;
+        $formDefinition['renderingOptions']['fieldState'][$field['identifier']] = $this->filterFieldAttributes($field);
     }
 
     /**
