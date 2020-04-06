@@ -11,7 +11,6 @@ namespace Lavitto\FormToDatabase\Domain\Repository;
 use DateInterval;
 use DateTime;
 use Exception;
-use Lavitto\FormToDatabase\Helpers\MiscHelper;
 use Lavitto\FormToDatabase\Utility\FormValueUtility;
 use PDO;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -94,16 +93,22 @@ class FormResultRepository extends Repository
             $pluginUids = $this->getPluginUids($webMounts);
             $orConditions = [];
             // Include result if user has access to the plugin which the result originates
-            if($siteIdentifiers) $orConditions[] = $query->in('formPluginUid', $pluginUids);
+            if ($siteIdentifiers) {
+                $orConditions[] = $query->in('formPluginUid', $pluginUids);
+            }
             // Include result if user has root access to site
-            if($pluginUids) $orConditions[] = $query->in('siteIdentifier', $siteIdentifiers);
+            if ($pluginUids) {
+                $orConditions[] = $query->in('siteIdentifier', $siteIdentifiers);
+            }
             // Includes result if result is old (those created before new identifying fields)
             $orConditions[] = $query->logicalAnd([
                 $query->equals('siteIdentifier', ''),
                 $query->equals('pid', 0)
             ]);
             // Include result always if user is admin
-            if($GLOBALS['BE_USER']->isAdmin()) $orConditions[] = $query->greaterThan('uid', 0);
+            if ($GLOBALS['BE_USER']->isAdmin()) {
+                $orConditions[] = $query->greaterThan('uid', 0);
+            }
 
             $query->matching(
                 $query->logicalAnd([
@@ -158,14 +163,16 @@ class FormResultRepository extends Repository
     protected function getTreePids(array $webMounts): array
     {
         $pidsArray = [];
-        if($webMounts !== null) {
+        if ($webMounts !== null) {
             $depth = 99;
             $pidsArray = [];
             /** @var QueryGenerator $queryGenerator */
-            $queryGenerator = GeneralUtility::makeInstance( QueryGenerator::class );
+            $queryGenerator = GeneralUtility::makeInstance(QueryGenerator::class);
             foreach ($webMounts as $webMount) {
                 $childPids = $queryGenerator->getTreeList($webMount, $depth, 0, 1); //Will be a string like 1,2,3
-                $pidsArray = array_merge($pidsArray, explode(',', $childPids ));
+                foreach (GeneralUtility::intExplode(',', $childPids, true) as $childPid) {
+                    $pidsArray[] = $childPid;
+                }
             }
         }
         return array_unique($pidsArray);
@@ -188,7 +195,8 @@ class FormResultRepository extends Repository
                 try {
                     $site = $siteMatcher->getSiteByRootPageId((int)$webMount);
                     $siteIdentifiers[] = $site->getIdentifier();
-                    } catch (SiteNotFoundException $exception) {}
+                } catch (SiteNotFoundException $exception) {
+                }
             }
         }
         return $siteIdentifiers;

@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpFullyQualifiedNameUsageInspection */
 /**
  * This file is part of the "form_to_database" Extension for TYPO3 CMS.
  *

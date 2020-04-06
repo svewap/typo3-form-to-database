@@ -1,9 +1,8 @@
-<?php
-
+<?php /** @noinspection ALL */
 
 namespace Lavitto\FormToDatabase\Helpers;
 
-
+use PDO;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\QueryGenerator;
@@ -19,7 +18,8 @@ class MiscHelper
      *
      * @return array
      */
-    static public function getWebMounts () {
+    static public function getWebMounts()
+    {
         $webMounts = [];
         if ($GLOBALS['BE_USER']->groupData['webmounts']) {
             $webMounts = GeneralUtility::trimExplode(',', $GLOBALS['BE_USER']->groupData['webmounts'], 1);
@@ -32,7 +32,8 @@ class MiscHelper
      *
      * @return array
      */
-    static public function getSiteIdentifiersFromRootPids($webMounts) {
+    static public function getSiteIdentifiersFromRootPids($webMounts)
+    {
         $siteIdentifiers = [];
         if ($webMounts) {
             //find site identifiers from mountpoints
@@ -42,7 +43,8 @@ class MiscHelper
                 try {
                     $site = $siteMatcher->getSiteByRootPageId((int)$webMount);
                     $siteIdentifiers[] = $site->getIdentifier();
-                } catch (SiteNotFoundException $exception) {}
+                } catch (SiteNotFoundException $exception) {
+                }
             }
         }
         return $siteIdentifiers;
@@ -52,7 +54,8 @@ class MiscHelper
      * @param $webMounts
      * @return array
      */
-    static public function getPluginUids($webMounts) {
+    static public function getPluginUids($webMounts)
+    {
         $pids = self::getTreePids($webMounts);
         /** @var QueryBuilder $queryBuilder */
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tt_content');
@@ -62,7 +65,8 @@ class MiscHelper
             ->from('tt_content')
             ->where(
                 $queryBuilder->expr()->in('pid', $pids ? $pids : [0]),
-                $queryBuilder->expr()->eq('CType', $queryBuilder->createNamedParameter('form_formframework', \PDO::PARAM_STR))
+                $queryBuilder->expr()->eq('CType',
+                    $queryBuilder->createNamedParameter('form_formframework', PDO::PARAM_STR))
             )
             ->execute()->fetchAll();
         return array_column($result, 'uid');
@@ -74,21 +78,22 @@ class MiscHelper
      * @param array $webMounts
      * @return array
      */
-    static public function getTreePids($webMounts = 0){
+    static public function getTreePids($webMounts = 0)
+    {
         $childPidsArray = [];
-        if($webMounts) {
+        if ($webMounts) {
             $depth = 99;
             $childPidsArray = [];
             /** @var QueryGenerator $queryGenerator */
-            $queryGenerator = GeneralUtility::makeInstance( QueryGenerator::class );
+            $queryGenerator = GeneralUtility::makeInstance(QueryGenerator::class);
             foreach ($webMounts as $webMount) {
                 $childPids = $queryGenerator->getTreeList($webMount, $depth, 0, 1); //Will be a string like 1,2,3
-                $childPidsArray = array_merge($childPidsArray, explode(',', $childPids ));
+                foreach (GeneralUtility::intExplode(',', $childPids, true) as $childPid) {
+                    $childPidsArray[] = $childPid;
+                }
             }
         }
         return array_unique($childPidsArray);
     }
-
-
 
 }

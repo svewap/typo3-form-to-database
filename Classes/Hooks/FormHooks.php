@@ -1,14 +1,24 @@
-<?php
+<?php /** @noinspection PhpUnusedParameterInspection */
+/** @noinspection PhpInternalEntityUsedInspection */
 
+/**
+ * This file is part of the "form_to_database" Extension for TYPO3 CMS.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE file that was distributed with this source code.
+ */
 
 namespace Lavitto\FormToDatabase\Hooks;
 
 use Lavitto\FormToDatabase\Domain\Model\FormResult;
 use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
 use Lavitto\FormToDatabase\Utility\FormDefinitionUtility;
+use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
+use TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException;
+use TYPO3\CMS\Extbase\Persistence\Exception\UnknownObjectException;
 use TYPO3\CMS\Extbase\Persistence\Generic\QueryResult;
 use TYPO3\CMS\Form\Mvc\Configuration\YamlSource;
 use TYPO3\CMS\Form\Mvc\Persistence\FormPersistenceManager;
@@ -16,17 +26,25 @@ use TYPO3\CMS\Form\Mvc\Persistence\FormPersistenceManagerInterface;
 
 /**
  * Class FormHooks
+ *
  * @package Lavitto\FormToDatabase\Hooks
  */
 class FormHooks
 {
 
+    /**
+     * @var array
+     */
     protected $fieldTypesNextIdentifier = [];
 
-    /** @var FormPersistenceManager */
+    /**
+     * @var FormPersistenceManager
+     */
     protected $formPersistenceManager;
 
-    /** @var int $enableListViewUntilCount */
+    /**
+     * @var int $enableListViewUntilCount
+     */
     protected $enableListViewUntilCount = 4;
 
     /**
@@ -49,7 +67,8 @@ class FormHooks
     /**
      *
      */
-    protected function initializeFormPersistenceManager() {
+    protected function initializeFormPersistenceManager(): void
+    {
         /** @var FormPersistenceManagerInterface $formPersistenceManager */
         $this->formPersistenceManager = GeneralUtility::makeInstance(FormPersistenceManager::class);
         $this->formPersistenceManager->initializeObject();
@@ -59,22 +78,32 @@ class FormHooks
 
     /**
      * @param $formPersistenceIdentifier
+     * @throws IllegalObjectTypeException
+     * @throws UnknownObjectException
+     * @noinspection PhpParamsInspection
+     * @noinspection PhpUndefinedMethodInspection
      */
-    public function beforeFormDelete($formPersistenceIdentifier) {
+    public function beforeFormDelete($formPersistenceIdentifier): void
+    {
         $this->initializeFormResultRepository();
         $resourceFactory = ResourceFactory::getInstance();
         $this->initializeFormPersistenceManager();
         $yaml = $this->formPersistenceManager->load($formPersistenceIdentifier);
+
+        /** @var File $file */
         $file = $resourceFactory->getFileObjectFromCombinedIdentifier($formPersistenceIdentifier);
-        //New unique filename
+
+        // New unique filename
         $newFilename = "{$yaml['identifier']}.form.yaml.deleted";
-        $newCombinedIdentifier = $file->copyTo($file->getParentFolder(), $newFilename)->getCombinedIdentifier();
-        /** @var QueryResult $results */
-        $results = $this->formResultRepository->findByFormIdentifier($yaml['identifier']);
-        /** @var FormResult $result */
-        foreach ($results as $result) {
-            $result->setFormPersistenceIdentifier($newCombinedIdentifier);
-            $this->formResultRepository->update($result);
+        if ($file !== null) {
+            $newCombinedIdentifier = $file->copyTo($file->getParentFolder(), $newFilename)->getCombinedIdentifier();
+            /** @var QueryResult $results */
+            $results = $this->formResultRepository->findByFormIdentifier($yaml['identifier']);
+            /** @var FormResult $result */
+            foreach ($results as $result) {
+                $result->setFormPersistenceIdentifier($newCombinedIdentifier);
+                $this->formResultRepository->update($result);
+            }
         }
     }
 
@@ -83,8 +112,9 @@ class FormHooks
      * @param $form
      * @return mixed
      */
-    public function beforeFormCreate($formPersistenceIdentifier, $form) {
-        $form['identifier'] .= '-' . uniqid();
+    public function beforeFormCreate($formPersistenceIdentifier, $form)
+    {
+        $form['identifier'] .= '-' . uniqid('', true);
         return $form;
     }
 
@@ -93,19 +123,22 @@ class FormHooks
      * @param $formToDuplicate
      * @return mixed
      */
-    public function beforeFormDuplicate($formPersistenceIdentifier, $formToDuplicate) {
-        $formToDuplicate['identifier'] = preg_replace("/(.*)-([a-z0-9]{13})/", "$1", $formToDuplicate['identifier']) . '-' . uniqid();
+    public function beforeFormDuplicate($formPersistenceIdentifier, $formToDuplicate)
+    {
+        $formToDuplicate['identifier'] = preg_replace('/(.*)-([a-z0-9]{13})/', '$1',
+                $formToDuplicate['identifier']) . '-' . uniqid('', true);
         return $formToDuplicate;
     }
 
-
     /**
      * Keep track of field identifiers of deleted and new fields, so that identifiers are not reused
+     *
      * @param $formPersistenceIdentifier
      * @param $formDefinition
      * @return mixed
      */
-    public function beforeFormSave($formPersistenceIdentifier, $formDefinition) {
+    public function beforeFormSave($formPersistenceIdentifier, $formDefinition)
+    {
         /** @var FormDefinitionUtility $formDefinitionUtility */
         $formDefinitionUtility = GeneralUtility::makeInstance(FormDefinitionUtility::class);
         return $formDefinitionUtility->updateFormDefinition($formDefinition);

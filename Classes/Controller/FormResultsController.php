@@ -1,4 +1,6 @@
-<?php /** @noinspection PhpInternalEntityUsedInspection */
+<?php /** @noinspection PhpUndefinedMethodInspection */
+/** @noinspection AdditionOperationOnArraysInspection */
+/** @noinspection PhpInternalEntityUsedInspection */
 
 /**
  * This file is part of the "form_to_database" Extension for TYPO3 CMS.
@@ -10,19 +12,20 @@
 namespace Lavitto\FormToDatabase\Controller;
 
 use DateTime;
-use DateTimeZone;
 use Exception;
 use Lavitto\FormToDatabase\Domain\Model\FormResult;
 use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
 use Lavitto\FormToDatabase\Helpers\MiscHelper;
 use Lavitto\FormToDatabase\Utility\FormDefinitionUtility;
 use Lavitto\FormToDatabase\Utility\FormValueUtility;
+use PDO;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Resource\Driver\LocalDriver;
+use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\Filter\FileExtensionFilter;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -32,6 +35,8 @@ use TYPO3\CMS\Extbase\Mvc\Exception\StopActionException;
 use TYPO3\CMS\Extbase\Mvc\Exception\UnsupportedRequestTypeException;
 use TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException;
 use TYPO3\CMS\Extbase\Persistence\Exception\InvalidQueryException;
+use TYPO3\CMS\Extbase\Persistence\Exception\UnknownObjectException;
+use TYPO3\CMS\Extbase\SignalSlot\Dispatcher;
 use TYPO3\CMS\Extbase\SignalSlot\Exception\InvalidSlotException;
 use TYPO3\CMS\Extbase\SignalSlot\Exception\InvalidSlotReturnException;
 use TYPO3\CMS\Form\Controller\FormManagerController;
@@ -39,9 +44,7 @@ use TYPO3\CMS\Form\Domain\Exception\RenderingException;
 use TYPO3\CMS\Form\Domain\Factory\ArrayFormFactory;
 use TYPO3\CMS\Form\Domain\Model\FormDefinition;
 use TYPO3\CMS\Form\Domain\Model\FormElements\AbstractFormElement;
-use TYPO3\CMS\Form\Mvc\Property\TypeConverter\FormDefinitionArrayConverter;
 use TYPO3\CMS\Form\Slot\FilePersistenceSlot;
-use TYPO3\CMS\Form\Type\FormDefinitionArray;
 
 /**
  * Class FormResultsController
@@ -51,9 +54,20 @@ use TYPO3\CMS\Form\Type\FormDefinitionArray;
 class FormResultsController extends FormManagerController
 {
 
-    const SIGNAL_FORMSRESULT_SHOW_ACTION = 'showAction';
-    const SIGNAL_FORMSRESULT_DOWNLOAD_CSV_ACTION = 'downloadCsvAction';
-    const SIGNAL_FORMSRESULT_DELETE_FORM_RESULT_ACTION = 'deleteFormResultAction';
+    /**
+     *
+     */
+    protected const SIGNAL_FORMSRESULT_SHOW_ACTION = 'showAction';
+
+    /**
+     *
+     */
+    protected const SIGNAL_FORMSRESULT_DOWNLOAD_CSV_ACTION = 'downloadCsvAction';
+
+    /**
+     *
+     */
+    protected const SIGNAL_FORMSRESULT_DELETE_FORM_RESULT_ACTION = 'deleteFormResultAction';
 
     /**
      * CSV Linebreak
@@ -78,7 +92,7 @@ class FormResultsController extends FormManagerController
     protected $formResultRepository;
 
     /**
-     * @var \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
+     * @var Dispatcher
      */
     protected $signalSlotDispatcher;
 
@@ -97,15 +111,20 @@ class FormResultsController extends FormManagerController
      */
     public function initializeShowAction(): void
     {
-        $this->getPageRenderer()->addCssFile('EXT:form_to_database/Resources/Public/Css/ShowStyles.css');
+        $this->getPageRenderer()->addCssFile(
+            'EXT:form_to_database/Resources/Public/Css/ShowPrintStyles.min.css',
+            'stylesheet',
+            'print'
+        );
     }
 
     /**
      * Inject SignalSlotDispatcher
      *
-     * @param \TYPO3\CMS\Extbase\SignalSlot\Dispatcher $signalSlotDispatcher
+     * @param Dispatcher $signalSlotDispatcher
+     * @noinspection SenselessMethodDuplicationInspection
      */
-    public function injectSignalSlotDispatcher(\TYPO3\CMS\Extbase\SignalSlot\Dispatcher $signalSlotDispatcher)
+    public function injectSignalSlotDispatcher(Dispatcher $signalSlotDispatcher): void
     {
         $this->signalSlotDispatcher = $signalSlotDispatcher;
     }
@@ -135,11 +154,10 @@ class FormResultsController extends FormManagerController
      * @throws InvalidQueryException
      * @throws RenderingException
      * @noinspection PhpUndefinedMethodInspection
+     * @noinspection PhpUnused
      */
     public function showAction(string $formPersistenceIdentifier): void
     {
-        $pageRenderer = $this->getPageRenderer();
-        $this->view->assign('stylesheets', $this->resolveResourcePaths(['EXT:form_to_database/Resources/Public/Css/ShowStyles.css?5']));
         $languageFile = 'LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:';
         $this->view->getModuleTemplate()->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/Modal');
         $this->view->getModuleTemplate()->getPageRenderer()->addInlineLanguageLabelArray([
@@ -212,8 +230,11 @@ class FormResultsController extends FormManagerController
     /**
      * @param string $formDefinitionPath
      * @param string $formIdentifier
-     * @throws \TYPO3\CMS\Extbase\Mvc\Exception\StopActionException
-     * @throws \TYPO3\CMS\Extbase\Mvc\Exception\UnsupportedRequestTypeException
+     * @throws IllegalObjectTypeException
+     * @throws StopActionException
+     * @throws UnsupportedRequestTypeException
+     * @throws UnknownObjectException
+     * @noinspection PhpParamsInspection
      */
     public function unDeleteFormDefinitionAction(string $formDefinitionPath, string $formIdentifier): void
     {
@@ -224,25 +245,31 @@ class FormResultsController extends FormManagerController
             str_replace('.deleted', '', $formDefinitionPath)
         );
         $resourceFactory = ResourceFactory::getInstance();
+
+        /** @var File $file */
         $file = $resourceFactory->getFileObjectFromCombinedIdentifier($formDefinitionPath);
 
-        $filename = "{$formIdentifier}.form.yaml";
-        $newCombinedIdentifier = $file->moveTo($file->getParentFolder(), $filename)->getCombinedIdentifier();
-        $results = $this->formResultRepository->findByFormIdentifier($formIdentifier);
-        /** @var FormResult $result */
-        foreach ($results as $result) {
-            $result->setFormPersistenceIdentifier($newCombinedIdentifier);
-            $this->formResultRepository->update($result);
+        if ($file !== null) {
+            $filename = "{$formIdentifier}.form.yaml";
+            $newCombinedIdentifier = $file->moveTo($file->getParentFolder(), $filename)->getCombinedIdentifier();
+            $results = $this->formResultRepository->findByFormIdentifier($formIdentifier);
+            /** @var FormResult $result */
+            foreach ($results as $result) {
+                $result->setFormPersistenceIdentifier($newCombinedIdentifier);
+                $this->formResultRepository->update($result);
+            }
         }
+
         $this->redirect('index');
     }
 
     /**
      * @throws NoSuchArgumentException
-     * @throws \TYPO3\CMS\Extbase\Mvc\Exception\StopActionException
-     * @throws \TYPO3\CMS\Extbase\Mvc\Exception\UnsupportedRequestTypeException
+     * @throws StopActionException
+     * @throws UnsupportedRequestTypeException
      */
-    public function updateItemListSelectAction() {
+    public function updateItemListSelectAction(): void
+    {
         $formPersistenceIdentifier = $this->request->getArgument('formPersistenceIdentifier');
         $formDefinition = $this->getFormDefinition($formPersistenceIdentifier);
         /** @var FormDefinitionUtility $formDefinitionUtility */
@@ -250,14 +277,16 @@ class FormResultsController extends FormManagerController
         $formDefinitionUtility->addFieldStateIfDoesNotExist($formDefinition);
 
         $fieldSelectedState = $this->request->getArgument('field');
-        if(isset($formDefinition['renderingOptions']['fieldState'])) {
+        if (isset($formDefinition['renderingOptions']['fieldState'])) {
             foreach ($formDefinition['renderingOptions']['fieldState'] as $fieldKey => &$fieldData) {
-                $fieldData['renderingOptions']['listView'] =  $fieldSelectedState[$fieldKey] ? 1 : 0;
+                $fieldData['renderingOptions']['listView'] = $fieldSelectedState[$fieldKey] ? 1 : 0;
             }
-        };
+            unset($fieldData);
+        }
 
         $this->formPersistenceManager->save($formPersistenceIdentifier, $formDefinition);
-        $this->redirect('show', null, null, ['formPersistenceIdentifier' => $this->request->getArgument('formPersistenceIdentifier')]);
+        $this->redirect('show', null, null,
+            ['formPersistenceIdentifier' => $this->request->getArgument('formPersistenceIdentifier')]);
     }
 
     /**
@@ -281,9 +310,10 @@ class FormResultsController extends FormManagerController
      * List all representations of deleted formDefinitions which can be found in FormResults but not from persistence manager.
      * Enrich this data by a the number of results.
      *
+     * @param array $availableFormDefinitions
      * @return array
      */
-    protected function getDeletedFormDefinitions($availableFormDefinitions): array
+    protected function getDeletedFormDefinitions(array $availableFormDefinitions): array
     {
         $accessibleDeletedFormDefinitions = [];
         $storageFolders = $this->formPersistenceManager->getAccessibleFormStorageFolders();
@@ -294,7 +324,10 @@ class FormResultsController extends FormManagerController
             $storageFolder->setFileAndFolderNameFilters([[$filter, 'filterFileList']]);
             $accessibleDeletedFormDefinitions += $storageFolder->getFiles();
         }
-        $accessibleDeletedFormDefinitions = array_map(function($val) { $val = $val->getCombinedIdentifier(); return $val;}, $accessibleDeletedFormDefinitions, []);
+        $accessibleDeletedFormDefinitions = array_map(static function ($val) {
+            $val = $val->getCombinedIdentifier();
+            return $val;
+        }, $accessibleDeletedFormDefinitions, []);
         $persistenceIdentifier = array_column($availableFormDefinitions, 'persistenceIdentifier');
 
         $webMounts = MiscHelper::getWebMounts();
@@ -306,27 +339,33 @@ class FormResultsController extends FormManagerController
         /** @var QueryBuilder $queryBuilder */
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_formtodatabase_domain_model_formresult');
         $result = $queryBuilder
-            ->select('form_persistence_identifier','form_identifier')
+            ->select('form_persistence_identifier', 'form_identifier')
             ->addSelectLiteral($queryBuilder->expr()->count('form_identifier', 'count'))
             ->from('tx_formtodatabase_domain_model_formresult')
             ->where(
                 $queryBuilder->expr()->orX(
-                    $queryBuilder->expr()->in('form_plugin_uid', $queryBuilder->createNamedParameter($pluginUids ? $pluginUids : [''], Connection::PARAM_STR_ARRAY)),
-                    $queryBuilder->expr()->in('site_identifier', $queryBuilder->createNamedParameter($siteIdentifiers ? $siteIdentifiers : [''], Connection::PARAM_STR_ARRAY)),
+                    $queryBuilder->expr()->in('form_plugin_uid',
+                        $queryBuilder->createNamedParameter($pluginUids ?? [''], Connection::PARAM_STR_ARRAY)),
+                    $queryBuilder->expr()->in('site_identifier',
+                        $queryBuilder->createNamedParameter($siteIdentifiers ?? [''], Connection::PARAM_STR_ARRAY)),
                     //Backward compatibility with old data
                     $queryBuilder->expr()->andX(
                         $queryBuilder->expr()->eq('site_identifier', $queryBuilder->createNamedParameter('')),
-                        $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT))
+                        $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter(0, PDO::PARAM_INT))
                     )
                 ),
-                $queryBuilder->expr()->notIn('form_persistence_identifier', $queryBuilder->createNamedParameter($persistenceIdentifier, Connection::PARAM_STR_ARRAY)),
-                $queryBuilder->expr()->in('form_persistence_identifier', $queryBuilder->createNamedParameter($accessibleDeletedFormDefinitions, Connection::PARAM_STR_ARRAY))
+                $queryBuilder->expr()->notIn('form_persistence_identifier',
+                    $queryBuilder->createNamedParameter($persistenceIdentifier, Connection::PARAM_STR_ARRAY)),
+                $queryBuilder->expr()->in('form_persistence_identifier',
+                    $queryBuilder->createNamedParameter($accessibleDeletedFormDefinitions, Connection::PARAM_STR_ARRAY))
 
-            )->groupBy('tx_formtodatabase_domain_model_formresult.form_persistence_identifier', 'tx_formtodatabase_domain_model_formresult.form_identifier')
+            )->groupBy('tx_formtodatabase_domain_model_formresult.form_persistence_identifier',
+                'tx_formtodatabase_domain_model_formresult.form_identifier')
             ->execute()->fetchAll();
 
-        array_walk($result, function(&$val) {
-            $val['name'] = $val['identifier'] = preg_replace("/.*\/(.*)-([a-z0-9]{13}).form.yaml.deleted/", "$1", $val['form_persistence_identifier']);
+        array_walk($result, static function (&$val) {
+            $val['name'] = $val['identifier'] = preg_replace("/.*\/(.*)-([a-z0-9]{13}).form.yaml.deleted/", '$1',
+                $val['form_persistence_identifier']);
             $val['persistenceIdentifier'] = $val['form_persistence_identifier'];
         });
         return $result;
@@ -339,12 +378,14 @@ class FormResultsController extends FormManagerController
      * @param bool $useFieldStateDataAsRenderables
      * @return array
      */
-    protected function getFormDefinition(string $formPersistenceIdentifier, $useFieldStateDataAsRenderables = false): array
-    {
+    protected function getFormDefinition(
+        string $formPersistenceIdentifier,
+        $useFieldStateDataAsRenderables = false
+    ): array {
         $configuration = $this->formPersistenceManager->load($formPersistenceIdentifier);
         $configuration['finishers'] = [];
 
-        if($useFieldStateDataAsRenderables) {
+        if ($useFieldStateDataAsRenderables) {
             //Ensure that fieldState exists
             /** @var FormDefinitionUtility $formDefinitionUtility */
             $formDefinitionUtility = GeneralUtility::makeInstance(FormDefinitionUtility::class);
@@ -353,7 +394,7 @@ class FormResultsController extends FormManagerController
             //Use fieldState as renderables instead of renderables
             unset($configuration['renderables'][0]['renderables']);
             $configuration['renderables'][0]['renderables'] = array_values($configuration['renderingOptions']['fieldState']);
-            $configuration['renderables'] = array_intersect_key($configuration['renderables'], [0=>1]);
+            $configuration['renderables'] = array_intersect_key($configuration['renderables'], [0 => 1]);
         }
         return $configuration;
     }
@@ -366,8 +407,10 @@ class FormResultsController extends FormManagerController
      * @return FormDefinition
      * @throws RenderingException
      */
-    protected function getFormDefinitionObject(string $formPersistenceIdentifier, $useFieldStateDataAsRenderables = false): FormDefinition
-    {
+    protected function getFormDefinitionObject(
+        string $formPersistenceIdentifier,
+        $useFieldStateDataAsRenderables = false
+    ): FormDefinition {
         $configuration = $this->getFormDefinition($formPersistenceIdentifier, $useFieldStateDataAsRenderables);
         /** @var ArrayFormFactory $arrayFormFactory */
         $arrayFormFactory = $this->objectManager->get(ArrayFormFactory::class);
@@ -544,18 +587,18 @@ class FormResultsController extends FormManagerController
         }
     }
 
-
     /**
      * Emits signal
      *
      * @param string $signalName name of the signal slot
      * @param array $signalArguments arguments for the signal slot
      */
-    protected function emitSignal($signalName, array $signalArguments)
+    protected function emitSignal($signalName, array $signalArguments): void
     {
         try {
-            $this->signalSlotDispatcher->dispatch(self::class , $signalName, $signalArguments);
+            $this->signalSlotDispatcher->dispatch(self::class, $signalName, $signalArguments);
         } catch (InvalidSlotException $exception) {
-        } catch (InvalidSlotReturnException $exception) {}
+        } catch (InvalidSlotReturnException $exception) {
+        }
     }
 }
