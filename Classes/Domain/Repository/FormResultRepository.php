@@ -13,11 +13,10 @@ use DateTime;
 use Exception;
 use Lavitto\FormToDatabase\Utility\FormValueUtility;
 use PDO;
-use TYPO3\CMS\Backend\Tree\Repository\PageTreeRepository;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
+use TYPO3\CMS\Core\Database\QueryGenerator;
 use TYPO3\CMS\Core\Exception\SiteNotFoundException;
-use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Persistence\Exception\InvalidQueryException;
@@ -44,13 +43,6 @@ class FormResultRepository extends Repository
     ];
 
     /**
-     * The PageTreeRepository
-     *
-     * @var PageTreeRepository
-     */
-    protected $pageTreeRepository;
-
-    /**
      * Ignore storage pid
      */
     public function initializeObject(): void
@@ -59,16 +51,6 @@ class FormResultRepository extends Repository
         $defaultQuerySettings = $this->objectManager->get(Typo3QuerySettings::class);
         $defaultQuerySettings->setRespectStoragePage(false);
         $this->setDefaultQuerySettings($defaultQuerySettings);
-    }
-
-    /**
-     * Injects the PageTreeRepository
-     *
-     * @param PageTreeRepository $pageTreeRepository
-     */
-    public function injectPageTreeRepository(PageTreeRepository $pageTreeRepository): void
-    {
-        $this->pageTreeRepository = $pageTreeRepository;
     }
 
     /**
@@ -109,18 +91,23 @@ class FormResultRepository extends Repository
         if (empty($webMounts) === false) {
             $siteIdentifiers = $this->getSiteIdentifiersFromRootPids($webMounts);
             $pluginUids = $this->getPluginUids($webMounts);
+            $orConditions = [];
+            // Include result if user has access to the plugin which the result originates
+            if($siteIdentifiers) $orConditions[] = $query->in('formPluginUid', $pluginUids);
+            // Include result if user has root access to site
+            if($pluginUids) $orConditions[] = $query->in('siteIdentifier', $siteIdentifiers);
+            // Includes result if result is old (those created before new identifying fields)
+            $orConditions[] = $query->logicalAnd([
+                $query->equals('siteIdentifier', ''),
+                $query->equals('pid', 0)
+            ]);
+            // Include result always if user is admin
+            if($GLOBALS['BE_USER']->isAdmin()) $orConditions[] = $query->greaterThan('uid', 0);
+
             $query->matching(
                 $query->logicalAnd([
                     $query->equals('formPersistenceIdentifier', $formPersistenceIdentifier),
-                    $query->logicalOr([
-                        $query->in('formPluginUid', $pluginUids),
-                        $query->in('siteIdentifier', $siteIdentifiers),
-                        // To include all records created before pid and siteIdentifier was taken into account
-                        $query->logicalAnd([
-                            $query->equals('siteIdentifier', ''),
-                            $query->equals('pid', 0)
-                        ])
-                    ])
+                    $query->logicalOr($orConditions)
                 ])
             );
         }
@@ -170,29 +157,17 @@ class FormResultRepository extends Repository
     protected function getTreePids(array $webMounts): array
     {
         $pidsArray = [];
-        if ($webMounts !== null) {
+        if($webMounts !== null) {
+            $depth = 99;
+            $pidsArray = [];
+            /** @var QueryGenerator $queryGenerator */
+            $queryGenerator = GeneralUtility::makeInstance( QueryGenerator::class );
             foreach ($webMounts as $webMount) {
-                $pageTree = $this->pageTreeRepository->getTree((int)$webMount);
-                $this->addTreeToPidsArray($pidsArray, $pageTree);
+                $childPids = $queryGenerator->getTreeList($webMount, $depth, 0, 1); //Will be a string like 1,2,3
+                $pidsArray = array_merge($pidsArray, explode(',', $childPids ));
             }
         }
         return array_unique($pidsArray);
-    }
-
-    /**
-     * Adds the uids of pages from pagetree to an array
-     *
-     * @param $pidsArray
-     * @param array $pageTree
-     */
-    protected function addTreeToPidsArray(&$pidsArray, array $pageTree): void
-    {
-        $pidsArray[] = $pageTree['uid'];
-        if (empty($pageTree['_children']) === false) {
-            foreach ($pageTree['_children'] as $children) {
-                $this->addTreeToPidsArray($pidsArray, $children);
-            }
-        }
     }
 
     /**
@@ -209,18 +184,10 @@ class FormResultRepository extends Repository
             /** @var SiteFinder $siteMatcher */
             $siteMatcher = GeneralUtility::makeInstance(SiteFinder::class);
             foreach ($webMounts as $webMount) {
-                if ((int)$webMount === 0) {
-                    /** @var Site $site */
-                    foreach ($siteMatcher->getAllSites() as $site) {
-                        $siteIdentifiers[] = $site->getIdentifier();
-                    }
-                } else {
-                    try {
-                        $site = $siteMatcher->getSiteByPageId((int)$webMount);
-                        $siteIdentifiers[] = $site->getIdentifier();
-                    } catch (SiteNotFoundException $exception) {
-                    }
-                }
+                try {
+                    $site = $siteMatcher->getSiteByRootPageId((int)$webMount);
+                    $siteIdentifiers[] = $site->getIdentifier();
+                    } catch (SiteNotFoundException $exception) {}
             }
         }
         return $siteIdentifiers;
