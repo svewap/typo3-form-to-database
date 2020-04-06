@@ -32,6 +32,8 @@ use TYPO3\CMS\Extbase\Mvc\Exception\StopActionException;
 use TYPO3\CMS\Extbase\Mvc\Exception\UnsupportedRequestTypeException;
 use TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException;
 use TYPO3\CMS\Extbase\Persistence\Exception\InvalidQueryException;
+use TYPO3\CMS\Extbase\SignalSlot\Exception\InvalidSlotException;
+use TYPO3\CMS\Extbase\SignalSlot\Exception\InvalidSlotReturnException;
 use TYPO3\CMS\Form\Controller\FormManagerController;
 use TYPO3\CMS\Form\Domain\Exception\RenderingException;
 use TYPO3\CMS\Form\Domain\Factory\ArrayFormFactory;
@@ -48,6 +50,10 @@ use TYPO3\CMS\Form\Type\FormDefinitionArray;
  */
 class FormResultsController extends FormManagerController
 {
+
+    const SIGNAL_FORMSRESULT_SHOW_ACTION = 'showAction';
+    const SIGNAL_FORMSRESULT_DOWNLOAD_CSV_ACTION = 'downloadCsvAction';
+    const SIGNAL_FORMSRESULT_DELETE_FORM_RESULT_ACTION = 'deleteFormResultAction';
 
     /**
      * CSV Linebreak
@@ -72,6 +78,11 @@ class FormResultsController extends FormManagerController
     protected $formResultRepository;
 
     /**
+     * @var \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
+     */
+    protected $signalSlotDispatcher;
+
+    /**
      * Injects the FormResultRepository
      *
      * @param FormResultRepository $formResultRepository
@@ -87,6 +98,16 @@ class FormResultsController extends FormManagerController
     public function initializeShowAction(): void
     {
         $this->getPageRenderer()->addCssFile('EXT:form_to_database/Resources/Public/Css/ShowStyles.css');
+    }
+
+    /**
+     * Inject SignalSlotDispatcher
+     *
+     * @param \TYPO3\CMS\Extbase\SignalSlot\Dispatcher $signalSlotDispatcher
+     */
+    public function injectSignalSlotDispatcher(\TYPO3\CMS\Extbase\SignalSlot\Dispatcher $signalSlotDispatcher)
+    {
+        $this->signalSlotDispatcher = $signalSlotDispatcher;
     }
 
     /**
@@ -117,6 +138,8 @@ class FormResultsController extends FormManagerController
      */
     public function showAction(string $formPersistenceIdentifier): void
     {
+        $pageRenderer = $this->getPageRenderer();
+        $this->view->assign('stylesheets', $this->resolveResourcePaths(['EXT:form_to_database/Resources/Public/Css/ShowStyles.css?5']));
         $languageFile = 'LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:';
         $this->view->getModuleTemplate()->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/Modal');
         $this->view->getModuleTemplate()->getPageRenderer()->addInlineLanguageLabelArray([
@@ -127,6 +150,14 @@ class FormResultsController extends FormManagerController
         $formResults = $this->formResultRepository->findByFormPersistenceIdentifier($formPersistenceIdentifier);
         $formDefinition = $this->getFormDefinitionObject($formPersistenceIdentifier, true);
         $formRenderables = $this->getFormRenderables($formDefinition);
+
+        $this->emitSignal(self::SIGNAL_FORMSRESULT_SHOW_ACTION, [
+            'formPersistenceIdentifier' => $formPersistenceIdentifier,
+            'formResults' => $formResults,
+            'formDefinition' => $formDefinition,
+            '$formRenderables' => $formRenderables
+        ]);
+
         $this->registerDocheaderButtons($formPersistenceIdentifier, $formResults->count() > 0);
         $this->view->assignMultiple([
             'formResults' => $formResults,
@@ -158,14 +189,23 @@ class FormResultsController extends FormManagerController
      * Deletes a form result and forwards to the show action
      *
      * @param FormResult $formResult
-     * @throws StopActionException
      * @throws IllegalObjectTypeException
+     * @throws RenderingException
+     * @throws StopActionException
      * @throws UnsupportedRequestTypeException
      */
     public function deleteFormResultAction(FormResult $formResult): void
     {
         $formPersistenceIdentifier = $formResult->getFormPersistenceIdentifier();
         $this->formResultRepository->remove($formResult);
+        $formDefinition = $this->getFormDefinitionObject($formPersistenceIdentifier);
+
+        $this->emitSignal(self::SIGNAL_FORMSRESULT_DELETE_FORM_RESULT_ACTION, [
+            $formPersistenceIdentifier,
+            $formResult,
+            $formDefinition,
+            $this->getFormRenderables($formDefinition)
+        ]);
         $this->redirect('show', null, null, ['formPersistenceIdentifier' => $formPersistenceIdentifier]);
     }
 
@@ -177,20 +217,17 @@ class FormResultsController extends FormManagerController
      */
     public function unDeleteFormDefinitionAction(string $formDefinitionPath, string $formIdentifier): void
     {
-
-            /** @var FilePersistenceSlot $formPersistenceSlot */
-            $formPersistenceSlot = GeneralUtility::makeInstance(FilePersistenceSlot::class);
-            $formPersistenceSlot->allowInvocation(
-                FilePersistenceSlot::COMMAND_FILE_MOVE,
-                str_replace('.deleted', '', $formDefinitionPath)
-            );
+        /** @var FilePersistenceSlot $formPersistenceSlot */
+        $formPersistenceSlot = GeneralUtility::makeInstance(FilePersistenceSlot::class);
+        $formPersistenceSlot->allowInvocation(
+            FilePersistenceSlot::COMMAND_FILE_MOVE,
+            str_replace('.deleted', '', $formDefinitionPath)
+        );
         $resourceFactory = ResourceFactory::getInstance();
-//        $combinedIdentifier = $formDefinitionPath . ".{$formIdentifier}";
         $file = $resourceFactory->getFileObjectFromCombinedIdentifier($formDefinitionPath);
 
         $filename = "{$formIdentifier}.form.yaml";
         $newCombinedIdentifier = $file->moveTo($file->getParentFolder(), $filename)->getCombinedIdentifier();
-        //todo1 Update form_persistence_identifier in results table - remove deleted
         $results = $this->formResultRepository->findByFormIdentifier($formIdentifier);
         /** @var FormResult $result */
         foreach ($results as $result) {
@@ -218,7 +255,6 @@ class FormResultsController extends FormManagerController
                 $fieldData['renderingOptions']['listView'] =  $fieldSelectedState[$fieldKey] ? 1 : 0;
             }
         };
-
 
         $this->formPersistenceManager->save($formPersistenceIdentifier, $formDefinition);
         $this->redirect('show', null, null, ['formPersistenceIdentifier' => $this->request->getArgument('formPersistenceIdentifier')]);
@@ -259,8 +295,6 @@ class FormResultsController extends FormManagerController
             $accessibleDeletedFormDefinitions += $storageFolder->getFiles();
         }
         $accessibleDeletedFormDefinitions = array_map(function($val) { $val = $val->getCombinedIdentifier(); return $val;}, $accessibleDeletedFormDefinitions, []);
-
-
         $persistenceIdentifier = array_column($availableFormDefinitions, 'persistenceIdentifier');
 
         $webMounts = MiscHelper::getWebMounts();
@@ -373,6 +407,13 @@ class FormResultsController extends FormManagerController
         $formResults = $this->formResultRepository->findByFormPersistenceIdentifier($formPersistenceIdentifier);
         $formDefinition = $this->getFormDefinitionObject($formPersistenceIdentifier, true);
         $formRenderables = $this->getFormRenderables($formDefinition);
+
+        $this->emitSignal(self::SIGNAL_FORMSRESULT_DOWNLOAD_CSV_ACTION, [
+            $formPersistenceIdentifier,
+            $formResults,
+            $formDefinition,
+            $formRenderables
+        ]);
 
         $header = [
             self::CSV_ENCLOSURE . $this->getLanguageService()->sL('LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.crdate') . self::CSV_ENCLOSURE
@@ -501,5 +542,20 @@ class FormResultsController extends FormManagerController
                 ->setGetVariables($getVars);
             $buttonBar->addButton($shortcutButton, ButtonBar::BUTTON_POSITION_RIGHT);
         }
+    }
+
+
+    /**
+     * Emits signal
+     *
+     * @param string $signalName name of the signal slot
+     * @param array $signalArguments arguments for the signal slot
+     */
+    protected function emitSignal($signalName, array $signalArguments)
+    {
+        try {
+            $this->signalSlotDispatcher->dispatch(self::class , $signalName, $signalArguments);
+        } catch (InvalidSlotException $exception) {
+        } catch (InvalidSlotReturnException $exception) {}
     }
 }
