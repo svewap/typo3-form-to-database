@@ -11,6 +11,10 @@
                 <source>Existing forms</source>
                 <target>Bestehende Formulare</target>
             </trans-unit>
+            <trans-unit id="index.deleted_forms" xml:space="preserve">
+                <source>Deleted forms</source>
+                <target>Gelöschte Formulare</target>
+            </trans-unit>
             <trans-unit id="index.number_of_results" xml:space="preserve">
                 <source>Number of results</source>
                 <target>Anzahl Resultate</target>
@@ -39,6 +43,14 @@
                 <source>Download results as CSV</source>
                 <target>Resultate als CSV herunterladen</target>
             </trans-unit>
+            <trans-unit id="formManager.forms_not_found.title" xml:space="preserve">
+                <source>No forms found!</source>
+                <target>Keine Formulare gefunden</target>
+            </trans-unit>
+            <trans-unit id="formManager.forms_not_found.message" xml:space="preserve">
+                <source>There are currently no forms found in the system.</source>
+                <target>Derzeit sind keine Formulare im System gefunden.</target>
+            </trans-unit>
             <trans-unit id="show.buttons.delete" xml:space="preserve">
                 <source>Delete Form Result</source>
                 <target>Formular-Resultat löschen</target>
@@ -50,6 +62,22 @@
             <trans-unit id="show.buttons.delete.description" xml:space="preserve">
                 <source>Are you sure you want to delete the form result?</source>
                 <target>Möchten Sie das Formular-Resultat wirklich löschen?</target>
+            </trans-unit>
+            <trans-unit id="index.buttons.undelete" xml:space="preserve">
+                <source>Restore form</source>
+                <target>Genopret formular</target>
+            </trans-unit>
+            <trans-unit id="show.itemListSelect.header" xml:space="preserve">
+                <source>Fields in result list</source>
+                <target>Felder in der resultate liste</target>
+            </trans-unit>
+            <trans-unit id="show.itemListSelect.table.elementtype" xml:space="preserve">
+                <source>Element type</source>
+                <target>Elementtyp</target>
+            </trans-unit>
+            <trans-unit id="show.itemListSelect.table.identifier" xml:space="preserve">
+                <source>Identifier</source>
+                <target>Id</target>
             </trans-unit>
         </body>
     </file>

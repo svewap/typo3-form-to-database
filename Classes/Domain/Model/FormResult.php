@@ -29,6 +29,14 @@ class FormResult extends AbstractEntity
     protected $formPersistenceIdentifier = '';
 
     /**
+     * Unique form identifier
+     *
+     * @see config/sites/{identifier}/config.yaml
+     * @var string
+     */
+    protected $formIdentifier = '';
+
+    /**
      * The Site Identifier
      *
      * @see config/sites/{identifier}/config.yaml
@@ -87,6 +95,22 @@ class FormResult extends AbstractEntity
     /**
      * Gets the siteIdentifier
      *
+     * @return string
+     */
+    public function getFormIdentifier(): string
+    {
+        return $this->formIdentifier;
+    }
+
+    /**
+     * @param string $formIdentifier
+     */
+    public function setFormIdentifier(string $formIdentifier): void
+    {
+        $this->formIdentifier = $formIdentifier;
+    }
+
+    /**
      * @return string
      */
     public function getSiteIdentifier(): string

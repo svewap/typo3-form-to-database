@@ -1,67 +1,83 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xliff version="1.0" xmlns:t3="http://typo3.org/schemas/xliff">
-    <file t3:id="1560424879" source-language="en" datatype="plaintext" original="messages" date="2019-06-12T10:10:00Z" product-name="form_to_database">
+    <file t3:id="1560424879" source-language="en" target-language="da" datatype="plaintext" original="messages" date="2019-06-12T10:10:00Z" product-name="form_to_database">
         <header/>
         <body>
             <trans-unit id="index.headline" xml:space="preserve">
                 <source>Form results</source>
+                <target>Formulardata</target>
             </trans-unit>
             <trans-unit id="index.existing_forms" xml:space="preserve">
                 <source>Existing forms</source>
+                <target>Eksisterende formularer</target>
             </trans-unit>
             <trans-unit id="index.deleted_forms" xml:space="preserve">
                 <source>Deleted forms</source>
+                <target>Slettede formularer</target>
             </trans-unit>
             <trans-unit id="index.number_of_results" xml:space="preserve">
                 <source>Number of results</source>
+                <target>Antal resultater</target>
             </trans-unit>
             <trans-unit id="show.results_for" xml:space="preserve">
                 <source>Results of form "%s"</source>
+                <target>Resultater fra formularen "%s"</target>
             </trans-unit>
             <trans-unit id="show.results_not_found.title" xml:space="preserve">
                 <source>No results found!</source>
+                <target>Ingen formulardata funden!</target>
             </trans-unit>
             <trans-unit id="show.results_not_found.message" xml:space="preserve">
                 <source>There are currently no results found for this form.</source>
+                <target>Der er endnu ikke gemt formulardata fra denne formular.</target>
             </trans-unit>
             <trans-unit id="show.crdate" xml:space="preserve">
                 <source>Date/Time</source>
+                <target>Dato/Tid</target>
             </trans-unit>
             <trans-unit id="show.buttons.backlink" xml:space="preserve">
                 <source>Back to overview</source>
+                <target>Tilbage til oversigten</target>
             </trans-unit>
             <trans-unit id="show.buttons.download_csv" xml:space="preserve">
                 <source>Download results as CSV</source>
+                <target>Download formulardata som CSV</target>
             </trans-unit>
             <trans-unit id="formManager.forms_not_found.title" xml:space="preserve">
                 <source>No forms found!</source>
+                <target>Ingen formularer fundet!</target>
             </trans-unit>
             <trans-unit id="formManager.forms_not_found.message" xml:space="preserve">
                 <source>There are currently no forms found in the system.</source>
+                <target>Der er endnu ikke oprettet nogen formularer i systemet.</target>
             </trans-unit>
             <trans-unit id="show.buttons.delete" xml:space="preserve">
                 <source>Delete Form Result</source>
+                <target>Slet formulardata</target>
             </trans-unit>
             <trans-unit id="show.buttons.delete.title" xml:space="preserve">
                 <source>Really delete?</source>
+                <target>Er du sikker?</target>
             </trans-unit>
             <trans-unit id="show.buttons.delete.description" xml:space="preserve">
                 <source>Are you sure you want to delete the form result?</source>
+                <target>Er du helt sikker på at du vil slette disse data?</target>
             </trans-unit>
             <trans-unit id="index.buttons.undelete" xml:space="preserve">
                 <source>Restore form</source>
+                <target>Genopret formular</target>
             </trans-unit>
             <trans-unit id="show.itemListSelect.header" xml:space="preserve">
                 <source>Fields in result list</source>
-            </trans-unit>
-            <trans-unit id="show.itemListSelect.buttons.saveandclose" xml:space="preserve">
-                <source>Fields in result list</source>
+                <target>Felter på listen</target>
             </trans-unit>
             <trans-unit id="show.itemListSelect.table.elementtype" xml:space="preserve">
                 <source>Element type</source>
+                <target>Elementtype</target>
             </trans-unit>
             <trans-unit id="show.itemListSelect.table.identifier" xml:space="preserve">
                 <source>Identifier</source>
+                <target>Id</target>
             </trans-unit>
         </body>
     </file>
