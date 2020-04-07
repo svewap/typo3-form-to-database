@@ -57,17 +57,17 @@ class FormResultsController extends FormManagerController
     /**
      *
      */
-    protected const SIGNAL_FORMSRESULT_SHOW_ACTION = 'showAction';
+    public const SIGNAL_FORMSRESULT_SHOW_ACTION = 'showAction';
 
     /**
      *
      */
-    protected const SIGNAL_FORMSRESULT_DOWNLOAD_CSV_ACTION = 'downloadCsvAction';
+    public const SIGNAL_FORMSRESULT_DOWNLOAD_CSV_ACTION = 'downloadCsvAction';
 
     /**
      *
      */
-    protected const SIGNAL_FORMSRESULT_DELETE_FORM_RESULT_ACTION = 'deleteFormResultAction';
+    public const SIGNAL_FORMSRESULT_DELETE_FORM_RESULT_ACTION = 'deleteFormResultAction';
 
     /**
      * CSV Linebreak
