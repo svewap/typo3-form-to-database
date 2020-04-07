@@ -184,9 +184,9 @@ class FormDefinitionUtility
     /**
      * @param $type
      * @param $identifier
-     * @return int
+     * @return string
      */
-    protected function getNextIdentifier($type, $identifier): int
+    protected function getNextIdentifier($type, $identifier): string
     {
         if (isset($this->fieldTypesNextIdentifier[$type])) {
             $identifier = $this->fieldTypesNextIdentifier[$type]['text'] . '-' . $this->fieldTypesNextIdentifier[$type]['number'];
