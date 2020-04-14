@@ -328,7 +328,7 @@ class FormResultsController extends FormManagerController
             $val = $val->getCombinedIdentifier();
             return $val;
         }, $accessibleDeletedFormDefinitions, []);
-        $persistenceIdentifier = array_column($availableFormDefinitions, 'persistenceIdentifier');
+        $persistenceIdentifier = array_column($availableFormDefinitions, 'persistenceIdentifier') ?: [''];
 
         $webMounts = MiscHelper::getWebMounts();
         //plugins that user currently has access to
