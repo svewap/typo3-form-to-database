@@ -195,8 +195,8 @@ class FormResultsController extends FormManagerController
     public function downloadCsvAction(): void
     {
         $formPersistenceIdentifier = $this->request->getArgument('formPersistenceIdentifier');
-        $csvContent = $this->getCsvContent($formPersistenceIdentifier);
-        header('Content-Type: application/csv');
+        $csvContent = "\xEF\xBB\xBF" . $this->getCsvContent($formPersistenceIdentifier);
+        header('Content-Type: application/csv; charset=UTF-8');
         header('Content-Disposition: attachment; filename="' . $this->getCsvFileName($formPersistenceIdentifier) . '";');
         header('Content-Length: ' . strlen($csvContent));
         echo $csvContent;
