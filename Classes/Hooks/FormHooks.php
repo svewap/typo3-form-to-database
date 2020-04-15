@@ -15,6 +15,7 @@ use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
 use Lavitto\FormToDatabase\Utility\FormDefinitionUtility;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Resource\StorageRepository;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException;
@@ -48,6 +49,11 @@ class FormHooks
     protected $enableListViewUntilCount = 4;
 
     /**
+     * @var ObjectManager
+     */
+    protected $objectManager;
+
+    /**
      * The FormResultRepository
      *
      * @var FormResultRepository
@@ -59,13 +65,11 @@ class FormHooks
      */
     public function initializeFormResultRepository(): void
     {
-        /** @var ObjectManager $objectManager */
-        $objectManager = GeneralUtility::makeInstance(ObjectManager::class);
-        $this->formResultRepository = $objectManager->get(FormResultRepository::class);
+        $this->formResultRepository = $this->objectManager->get(FormResultRepository::class);
     }
 
     /**
-     *
+     * Injects necessary objects into the formPersistenceManager
      */
     protected function initializeFormPersistenceManager(): void
     {
@@ -73,61 +77,59 @@ class FormHooks
         $this->formPersistenceManager = GeneralUtility::makeInstance(FormPersistenceManager::class);
         $this->formPersistenceManager->initializeObject();
         $this->formPersistenceManager->injectResourceFactory(ResourceFactory::getInstance());
-        $this->formPersistenceManager->injectYamlSource(GeneralUtility::makeInstance(YamlSource::class));
+
+        /** @var StorageRepository $storageRepository */
+        $storageRepository = $this->objectManager->get(StorageRepository::class);
+        $this->formPersistenceManager->injectStorageRepository($storageRepository);
+
+        /** @var YamlSource $yamlSource */
+        $yamlSource = $this->objectManager->get(YamlSource::class);
+        $this->formPersistenceManager->injectYamlSource($yamlSource);
     }
 
     /**
      * @param $formPersistenceIdentifier
      * @throws IllegalObjectTypeException
      * @throws UnknownObjectException
+     * @throws \TYPO3\CMS\Extbase\Persistence\Exception\InvalidQueryException
+     * @throws \TYPO3\CMS\Form\Mvc\Persistence\Exception\PersistenceManagerException
      * @noinspection PhpParamsInspection
      * @noinspection PhpUndefinedMethodInspection
      */
     public function beforeFormDelete($formPersistenceIdentifier): void
     {
+        $this->objectManager = GeneralUtility::makeInstance(ObjectManager::class);
         $this->initializeFormResultRepository();
-        $resourceFactory = ResourceFactory::getInstance();
         $this->initializeFormPersistenceManager();
         $yaml = $this->formPersistenceManager->load($formPersistenceIdentifier);
 
         /** @var File $file */
-        $file = $resourceFactory->getFileObjectFromCombinedIdentifier($formPersistenceIdentifier);
+        $file = ResourceFactory::getInstance()->getFileObjectFromCombinedIdentifier($formPersistenceIdentifier);
 
-        // New unique filename
-        $newFilename = "{$yaml['identifier']}.form.yaml.deleted";
+        //Generate new identifier
+        $oldIdentifier = $yaml['identifier'];
+        $cleanedIdentifier = preg_replace('/(.*)-([a-z0-9]{13})/', '$1', $yaml['identifier']);
+        $newIdentifier = uniqid($cleanedIdentifier . "-");
+
+        // Set new unique filename and update form definition with new identifier
+        $newFilename = "{$newIdentifier}.form.yaml.deleted";
+        $yaml['identifier'] = $newIdentifier;
+        $this->formPersistenceManager->save($formPersistenceIdentifier, $yaml);
+
         if ($file !== null) {
             $newCombinedIdentifier = $file->copyTo($file->getParentFolder(), $newFilename)->getCombinedIdentifier();
             /** @var QueryResult $results */
-            $results = $this->formResultRepository->findByFormIdentifier($yaml['identifier']);
+            $results = $this->formResultRepository->findByFormPersistenceIdentifier($formPersistenceIdentifier);
             /** @var FormResult $result */
             foreach ($results as $result) {
                 $result->setFormPersistenceIdentifier($newCombinedIdentifier);
+                $result->setFormIdentifier($newIdentifier);
                 $this->formResultRepository->update($result);
             }
         }
-    }
-
-    /**
-     * @param $formPersistenceIdentifier
-     * @param $form
-     * @return mixed
-     */
-    public function beforeFormCreate($formPersistenceIdentifier, $form)
-    {
-        $form['identifier'] .= '-' . uniqid('', true);
-        return $form;
-    }
-
-    /**
-     * @param $formPersistenceIdentifier
-     * @param $formToDuplicate
-     * @return mixed
-     */
-    public function beforeFormDuplicate($formPersistenceIdentifier, $formToDuplicate)
-    {
-        $formToDuplicate['identifier'] = preg_replace('/(.*)-([a-z0-9]{13})/', '$1',
-                $formToDuplicate['identifier']) . '-' . uniqid('', true);
-        return $formToDuplicate;
+        //Restore form definition with old identifier, so that the file to be deleted can be found by original identifier
+        $yaml['identifier'] = $oldIdentifier;
+        $this->formPersistenceManager->save($formPersistenceIdentifier, $yaml);
     }
 
     /**
