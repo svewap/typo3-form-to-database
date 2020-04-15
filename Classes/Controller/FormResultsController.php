@@ -77,7 +77,7 @@ class FormResultsController extends FormManagerController
     /**
      * CSV Delimiter
      */
-    protected const CSV_DELIMITER = ',';
+    protected const CSV_DELIMITER = ';';
 
     /**
      * CSV Text Enclosure
