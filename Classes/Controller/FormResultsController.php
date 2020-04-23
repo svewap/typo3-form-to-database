@@ -16,6 +16,7 @@ use Exception;
 use Lavitto\FormToDatabase\Domain\Model\FormResult;
 use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
 use Lavitto\FormToDatabase\Helpers\MiscHelper;
+use Lavitto\FormToDatabase\Utility\ExtConfUtility;
 use Lavitto\FormToDatabase\Utility\FormDefinitionUtility;
 use Lavitto\FormToDatabase\Utility\FormValueUtility;
 use PDO;
@@ -75,14 +76,14 @@ class FormResultsController extends FormManagerController
     protected const CSV_LINEBREAK = "\n";
 
     /**
-     * CSV Delimiter
-     */
-    protected const CSV_DELIMITER = ';';
-
-    /**
      * CSV Text Enclosure
      */
     protected const CSV_ENCLOSURE = '"';
+
+    /**
+     * @var ExtConfUtility
+     */
+    protected $extConfUtility;
 
     /**
      * The FormResultRepository
@@ -104,6 +105,16 @@ class FormResultsController extends FormManagerController
     public function injectFormResultRepository(FormResultRepository $formResultRepository): void
     {
         $this->formResultRepository = $formResultRepository;
+    }
+
+    /**
+     * Injects the ExtConfUtility
+     *
+     * @param ExtConfUtility $extConfUtility
+     */
+    public function injectExtConfUtility(ExtConfUtility $extConfUtility): void
+    {
+        $this->extConfUtility = $extConfUtility;
     }
 
     /**
@@ -191,12 +202,14 @@ class FormResultsController extends FormManagerController
      *
      * @throws NoSuchArgumentException
      * @throws Exception
+     * @todo Add more charsets?
      */
     public function downloadCsvAction(): void
     {
+        $charset = 'UTF-8';
         $formPersistenceIdentifier = $this->request->getArgument('formPersistenceIdentifier');
         $csvContent = "\xEF\xBB\xBF" . $this->getCsvContent($formPersistenceIdentifier);
-        header('Content-Type: application/csv; charset=UTF-8');
+        header('Content-Type: application/csv; charset=' . $charset);
         header('Content-Disposition: attachment; filename="' . $this->getCsvFileName($formPersistenceIdentifier) . '";');
         header('Content-Length: ' . strlen($csvContent));
         echo $csvContent;
@@ -445,6 +458,7 @@ class FormResultsController extends FormManagerController
      */
     protected function getCsvContent(string $formPersistenceIdentifier): string
     {
+        $csvDelimiter = $this->extConfUtility->getConfig('csvDelimiter') ?? ';';
         $csvContent = [];
 
         $formResults = $this->formResultRepository->findByFormPersistenceIdentifier($formPersistenceIdentifier);
@@ -461,11 +475,12 @@ class FormResultsController extends FormManagerController
         $header = [
             self::CSV_ENCLOSURE . $this->getLanguageService()->sL('LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.crdate') . self::CSV_ENCLOSURE
         ];
+
         /** @var AbstractFormElement $renderable */
         foreach ($formRenderables as $renderable) {
             $header[] = self::CSV_ENCLOSURE . $renderable->getLabel() . self::CSV_ENCLOSURE;
         }
-        $csvContent[] = implode(self::CSV_DELIMITER, $header);
+        $csvContent[] = implode($csvDelimiter, $header);
 
         /** @var FormResult $formResult */
         foreach ($formResults as $i => $formResult) {
@@ -481,7 +496,7 @@ class FormResultsController extends FormManagerController
                     $convertedFieldValue));
                 $content[] = self::CSV_ENCLOSURE . $cleanFieldValue . self::CSV_ENCLOSURE;
             }
-            $csvContent[] = implode(self::CSV_DELIMITER, $content);
+            $csvContent[] = implode($csvDelimiter, $content);
         }
 
         return implode(self::CSV_LINEBREAK, $csvContent);

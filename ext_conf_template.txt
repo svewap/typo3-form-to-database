@@ -1,0 +1,6 @@
+########################
+### FORM TO DATABASE ###
+########################
+
+# cat=CSV-Settings; type=string; label=CSV-Delimiter
+csvDelimiter = ;
