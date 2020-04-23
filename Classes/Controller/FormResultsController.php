@@ -396,7 +396,6 @@ class FormResultsController extends FormManagerController
         $useFieldStateDataAsRenderables = false
     ): array {
         $configuration = $this->formPersistenceManager->load($formPersistenceIdentifier);
-        $configuration['finishers'] = [];
 
         if ($useFieldStateDataAsRenderables) {
             //Ensure that fieldState exists

@@ -9,29 +9,54 @@
 		</span>
 	</td>
 	<td class="col-title col-responsive nowrap">
-		<f:link.action action="show"
-					   arguments="{formPersistenceIdentifier: form.persistenceIdentifier}"
-					   title="{f:translate(key: 'LLL:EXT:form/Resources/Private/Language/Database.xlf:formManager.edit_form')}"
-					   data="{toggle: 'tooltip', placement: 'right'}">
-			{form.name}
-		</f:link.action>
+		<f:if condition="{form.numberOfResults}">
+			<f:then>
+				<f:link.action action="show"
+							   arguments="{formPersistenceIdentifier: form.persistenceIdentifier}"
+							   title="{f:translate(key: 'LLL:EXT:form/Resources/Private/Language/Database.xlf:formManager.edit_form')}"
+							   data="{toggle: 'tooltip', placement: 'right'}">
+					{form.name}
+				</f:link.action>
+			</f:then>
+			<f:else>
+				{form.name}
+			</f:else>
+		</f:if>
 	</td>
 	<td class="col-control nowrap">
 		<div class="btn-group" role="group">
-			<f:link.action action="show"
-						   arguments="{formPersistenceIdentifier: form.persistenceIdentifier}"
-						   title="{f:translate(key: 'LLL:EXT:form/Resources/Private/Language/Database.xlf:formManager.edit_form')}"
-						   class="btn btn-default form-record-open">
-				<core:icon identifier="actions-document-view"/>
-			</f:link.action>
+			<f:if condition="{form.numberOfResults}">
+				<f:then>
+					<f:link.action action="show"
+								   arguments="{formPersistenceIdentifier: form.persistenceIdentifier}"
+								   title="{f:translate(key: 'LLL:EXT:form/Resources/Private/Language/Database.xlf:formManager.edit_form')}"
+								   class="btn btn-default form-record-open">
+						<core:icon identifier="actions-document-view"/>
+					</f:link.action>
+				</f:then>
+				<f:else>
+					<button class="btn btn-default form-record-readonly"
+							disabled="disabled"
+							title="{f:translate(key: 'LLL:EXT:form/Resources/Private/Language/Database.xlf:formManager.edit_form')}">
+						<core:icon identifier="actions-document-view" />
+					</button>
+				</f:else>
+			</f:if>
 		</div>
 	</td>
 	<td class="nowrap">
-		<f:link.action action="show"
-					   arguments="{formPersistenceIdentifier: form.persistenceIdentifier}"
-					   title="{f:translate(key: 'LLL:EXT:form/Resources/Private/Language/Database.xlf:formManager.edit_form')}">
-			{form.numberOfResults}
-		</f:link.action>
+		<f:if condition="{form.numberOfResults}">
+			<f:then>
+				<f:link.action action="show"
+							   arguments="{formPersistenceIdentifier: form.persistenceIdentifier}"
+							   title="{f:translate(key: 'LLL:EXT:form/Resources/Private/Language/Database.xlf:formManager.edit_form')}">
+					{form.numberOfResults}
+				</f:link.action>
+			</f:then>
+			<f:else>
+				{form.numberOfResults}
+			</f:else>
+		</f:if>
 	</td>
 	<f:if condition="!{extConf.hideLocationInList}">
 		<td class="nowrap">{form.persistenceIdentifier}</td>
