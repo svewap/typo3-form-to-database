@@ -1,4 +1,5 @@
 <html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+	  xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
 	  data-namespace-typo3-fluid="true">
 
 <f:be.widget.paginate as="paginatedFormResults" objects="{formResults}"
@@ -28,9 +29,10 @@
 						</f:for>
 						<th class="col-control nowrap">
 							<div class="btn-group" role="group">
-								<a href="#" class="btn btn-default" data-toggle="modal"
+								<a href="#" class="btn btn-sm btn-default" data-toggle="modal"
 											   data-target="#itemListSelect">
-								<core:icon identifier="actions-document-view"/>
+								<core:icon identifier="actions-cog" size="small"/> <f:translate
+										key="LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.buttons.column_settings"/>
 								</a>
 							</div>
 						</th>

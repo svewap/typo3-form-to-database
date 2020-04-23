@@ -33,6 +33,9 @@
             <trans-unit id="show.buttons.download_csv" xml:space="preserve">
                 <source>Download results as CSV</source>
             </trans-unit>
+            <trans-unit id="show.buttons.column_settings" xml:space="preserve">
+                <source>Columns</source>
+            </trans-unit>
             <trans-unit id="formManager.forms_not_found.title" xml:space="preserve">
                 <source>No forms found!</source>
             </trans-unit>
