@@ -33,7 +33,9 @@
 			{form.numberOfResults}
 		</f:link.action>
 	</td>
-	<td class="nowrap">{form.persistenceIdentifier}</td>
+	<f:if condition="!{extConf.hideLocationInList}">
+		<td class="nowrap">{form.persistenceIdentifier}</td>
+	</f:if>
 </tr>
 
 </html>

@@ -2,5 +2,8 @@
 ### FORM TO DATABASE ###
 ########################
 
+# cat=General; type=boolean; label=Hide column "location" in list
+hideLocationInList = 0
+
 # cat=CSV-Settings; type=string; label=CSV-Delimiter
 csvDelimiter = ;

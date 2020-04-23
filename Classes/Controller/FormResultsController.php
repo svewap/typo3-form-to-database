@@ -527,7 +527,8 @@ class FormResultsController extends FormManagerController
     {
         $this->view->assignMultiple([
             'dateFormat' => FormValueUtility::getDateFormat(),
-            'timeFormat' => FormValueUtility::getTimeFormat()
+            'timeFormat' => FormValueUtility::getTimeFormat(),
+            'extConf' => $this->extConfUtility->getFullConfig()
         ]);
     }
 

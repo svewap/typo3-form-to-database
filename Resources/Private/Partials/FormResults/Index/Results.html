@@ -20,16 +20,18 @@
 						<f:translate
 								key="LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:index.number_of_results"/>
 					</th>
-					<th class="nowrap">
-						<f:translate
-								key="LLL:EXT:form/Resources/Private/Language/Database.xlf:formManager.location"/>
-					</th>
+					<f:if condition="!{extConf.hideLocationInList}">
+						<th class="nowrap">
+							<f:translate
+									key="LLL:EXT:form/Resources/Private/Language/Database.xlf:formManager.location"/>
+						</th>
+					</f:if>
 				</tr>
 				</thead>
 				<tbody>
-					<f:for each="{forms}" as="form">
-						<f:render partial="FormResults/Index/Results/Item" arguments="{_all}"/>
-					</f:for>
+				<f:for each="{forms}" as="form">
+					<f:render partial="FormResults/Index/Results/Item" arguments="{_all}"/>
+				</f:for>
 				</tbody>
 			</table>
 		</div>

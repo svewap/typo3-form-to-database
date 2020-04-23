@@ -27,6 +27,7 @@ class ExtConfUtility implements SingletonInterface
      * @var array
      */
     protected $defaultExtConf = [
+        'hideLocationInList' => false,
         'csvDelimiter' => ';'
     ];
 
@@ -41,6 +42,16 @@ class ExtConfUtility implements SingletonInterface
             $extConf = unserialize($extConfSerialized, ['allowed_classes' => false]);
         }
         $this->extConf = array_merge($this->defaultExtConf, $extConf);
+    }
+
+    /**
+     * Returns the full configuration
+     *
+     * @return array
+     */
+    public function getFullConfig(): array
+    {
+        return $this->extConf;
     }
 
     /**

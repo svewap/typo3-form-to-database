@@ -13,14 +13,18 @@
 	<td class="nowrap">
 		{form.count}
 	</td>
-	<td class="nowrap">{form.persistenceIdentifier}</td>
+	<f:if condition="!{extConf.hideLocationInList}">
+		<td class="nowrap">{form.persistenceIdentifier}</td>
+	</f:if>
 	<td class="col-control nowrap">
 		<div class="btn-group" role="group">
 			<f:link.action action="unDeleteFormDefinition"
 						   arguments="{formDefinitionPath: form.persistenceIdentifier, formIdentifier: form.form_identifier}"
 						   title="{f:translate(key: 'LLL:EXT:form/Resources/Private/Language/Database.xlf:formManager.edit_form')}"
 						   class="btn btn-default form-record-open">
-				<core:icon identifier="actions-edit-undo"/> <f:translate key="LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:index.buttons.undelete"/>
+				<core:icon identifier="actions-edit-undo"/>
+				<f:translate
+						key="LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:index.buttons.undelete"/>
 			</f:link.action>
 		</div>
 	</td>
