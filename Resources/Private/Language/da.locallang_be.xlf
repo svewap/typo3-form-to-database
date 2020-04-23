@@ -43,6 +43,10 @@
                 <source>Download results as CSV</source>
                 <target>Download formulardata som CSV</target>
             </trans-unit>
+            <trans-unit id="show.buttons.column_settings" xml:space="preserve">
+                <source>Columns</source>
+                <target>Kolonner</target>
+            </trans-unit>
             <trans-unit id="formManager.forms_not_found.title" xml:space="preserve">
                 <source>No forms found!</source>
                 <target>Ingen formularer fundet!</target>
