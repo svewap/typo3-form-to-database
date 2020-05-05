@@ -93,11 +93,11 @@ class FormResultRepository extends Repository
             $pluginUids = $this->getPluginUids($webMounts);
             $orConditions = [];
             // Include result if user has access to the plugin which the result originates
-            if ($siteIdentifiers) {
+            if ($pluginUids) {
                 $orConditions[] = $query->in('formPluginUid', $pluginUids);
             }
             // Include result if user has root access to site
-            if ($pluginUids) {
+            if ($siteIdentifiers) {
                 $orConditions[] = $query->in('siteIdentifier', $siteIdentifiers);
             }
             // Includes result if result is old (those created before new identifying fields)
