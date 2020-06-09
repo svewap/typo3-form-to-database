@@ -15,6 +15,11 @@ call_user_func(function () {
         \TYPO3\CMS\Core\Imaging\IconProvider\SvgIconProvider::class,
         ['source' => 'EXT:form_to_database/Resources/Public/Icons/action-print.svg']
     );
+    $iconRegistry->registerIcon(
+        'show-new',
+        \TYPO3\CMS\Core\Imaging\IconProvider\SvgIconProvider::class,
+        ['source' => 'EXT:form_to_database/Resources/Public/Icons/show-new.svg']
+    );
     $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormSave'][] = \Lavitto\FormToDatabase\Hooks\FormHooks::class;
     $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormDelete'][] = \Lavitto\FormToDatabase\Hooks\FormHooks::class;
 });

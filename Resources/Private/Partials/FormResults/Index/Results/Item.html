@@ -23,6 +23,13 @@
 			</f:else>
 		</f:if>
 	</td>
+	<td>
+		<f:if condition="{form.maxCrDate}">
+			<span class="{f:if(condition:form.newDataExists, then:'time-since-last-update')}">
+				<f:format.date format="%d. %b %Y %H:%M">@{form.maxCrDate}</f:format.date>
+			</span>
+		</f:if>
+	</td>
 	<td class="col-control nowrap">
 		<div class="btn-group" role="group">
 			<f:if condition="{form.numberOfResults}">

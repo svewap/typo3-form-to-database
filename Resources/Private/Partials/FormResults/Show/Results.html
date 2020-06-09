@@ -18,6 +18,12 @@
 				<table id="forms" class="table table-striped table-hover">
 					<thead>
 					<tr>
+						<f:if condition="{newDataExists}">
+							<th>
+								<f:translate
+										key="LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.new"/>
+							</th>
+						</f:if>
 						<th>
 							<f:translate
 									key="LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.crdate"/>

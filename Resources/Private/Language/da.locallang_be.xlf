@@ -19,6 +19,10 @@
                 <source>Number of results</source>
                 <target>Antal resultater</target>
             </trans-unit>
+            <trans-unit id="index.latest" xml:space="preserve">
+                <source>Latest data</source>
+                <target>Seneste data</target>
+            </trans-unit>
             <trans-unit id="show.results_for" xml:space="preserve">
                 <source>Results of form "%s"</source>
                 <target>Resultater fra formularen "%s"</target>
@@ -30,6 +34,10 @@
             <trans-unit id="show.results_not_found.message" xml:space="preserve">
                 <source>There are currently no results found for this form.</source>
                 <target>Der er endnu ikke gemt formulardata fra denne formular.</target>
+            </trans-unit>
+            <trans-unit id="show.new" xml:space="preserve">
+                <source>New</source>
+                <target>Ny</target>
             </trans-unit>
             <trans-unit id="show.crdate" xml:space="preserve">
                 <source>Date/Time</source>
