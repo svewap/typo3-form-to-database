@@ -12,6 +12,7 @@
 namespace Lavitto\FormToDatabase\Controller;
 
 use DateTime;
+use Doctrine\DBAL\FetchMode;
 use Exception;
 use Lavitto\FormToDatabase\Domain\Model\FormResult;
 use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
@@ -21,6 +22,7 @@ use Lavitto\FormToDatabase\Utility\FormDefinitionUtility;
 use Lavitto\FormToDatabase\Utility\FormValueUtility;
 use PDO;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
@@ -98,6 +100,11 @@ class FormResultsController extends FormManagerController
     protected $signalSlotDispatcher;
 
     /**
+     * @var BackendUserAuthentication
+     */
+    protected $BEUser;
+
+    /**
      * Injects the FormResultRepository
      *
      * @param FormResultRepository $formResultRepository
@@ -116,6 +123,15 @@ class FormResultsController extends FormManagerController
     {
         $this->extConfUtility = $extConfUtility;
     }
+
+    /**
+     *
+     */
+    protected function initializeAction()
+    {
+        $this->BEUser = $GLOBALS['BE_USER'];
+    }
+
 
     /**
      * Initialize Show Action
@@ -153,9 +169,46 @@ class FormResultsController extends FormManagerController
         $this->view->getModuleTemplate()->setModuleName($this->request->getPluginName() . '_' . $this->request->getControllerName());
         $this->view->getModuleTemplate()->setFlashMessageQueue($this->controllerContext->getFlashMessageQueue());
         $availableFormDefinitions = $this->getAvailableFormDefinitions();
+        $this->enrichFormDefinitionsWithHighestCrDate($availableFormDefinitions);
         $this->view->assign('forms', $availableFormDefinitions);
         $this->view->assign('deletedForms', $this->getDeletedFormDefinitions($availableFormDefinitions));
         $this->assignDefaults();
+    }
+
+    /**
+     * @param $formDefinition
+     * @return mixed|null
+     */
+    private function getCurrentBEUserLastViewTime($formDefinition) {
+        $identifier = is_array($formDefinition) ? $formDefinition['identifier'] : $formDefinition->getIdentifier();
+        return $this->BEUser->uc['tx_formtodatabase']['lastView'][$identifier] ?? null;
+    }
+
+    /**
+     * @param $formDefinitions
+     */
+    private function enrichFormDefinitionsWithHighestCrDate(&$formDefinitions) {
+        $identifiers = array_column($formDefinitions, 'identifier');
+        /** @var ConnectionPool $connectionPool */
+        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $table = 'tx_formtodatabase_domain_model_formresult';
+        $qb = $connectionPool->getQueryBuilderForTable($table);
+        $result = $qb->select('form_identifier')
+            ->addSelectLiteral(
+                $qb->expr()->max('crdate', 'maxcrdate')
+            )
+            ->from($table)
+            ->where($qb->expr()->in(
+                'form_identifier',
+                $qb->createNamedParameter($identifiers, Connection::PARAM_STR_ARRAY))
+            )
+            ->groupBy('form_identifier')
+            ->execute()->fetchAll(FetchMode::NUMERIC);
+        $maxCrDates = array_combine(array_column($result,0), array_column($result,1));
+        foreach ($formDefinitions as &$formDefinition) {
+            $formDefinition['maxCrDate'] = $maxCrDates[$formDefinition['identifier']] ?? null;
+            $formDefinition['newDataExists'] = $formDefinition['maxCrDate'] > $this->getCurrentBEUserLastViewTime($formDefinition);
+        }
     }
 
     /**
@@ -169,6 +222,8 @@ class FormResultsController extends FormManagerController
      */
     public function showAction(string $formPersistenceIdentifier): void
     {
+        $newDataExists = false;
+
         $languageFile = 'LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:';
         $this->view->getModuleTemplate()->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/Modal');
         $this->view->getModuleTemplate()->getPageRenderer()->addInlineLanguageLabelArray([
@@ -179,6 +234,15 @@ class FormResultsController extends FormManagerController
         $formResults = $this->formResultRepository->findByFormPersistenceIdentifier($formPersistenceIdentifier);
         $formDefinition = $this->getFormDefinitionObject($formPersistenceIdentifier, true);
         $formRenderables = $this->getFormRenderables($formDefinition);
+        $lastView = $this->getCurrentBEUserLastViewTime($formDefinition);
+        //Find if any new data exists
+        if($lastView) {
+            foreach($formResults as $formResult) {
+                if($formResult->getCrdate() > new DateTime("@$lastView")) {
+                    $newDataExists = true;
+                }
+            }
+        }
 
         $this->emitSignal(self::SIGNAL_FORMSRESULT_SHOW_ACTION, [
             'formPersistenceIdentifier' => $formPersistenceIdentifier,
@@ -192,9 +256,16 @@ class FormResultsController extends FormManagerController
             'formResults' => $formResults,
             'formDefinition' => $formDefinition,
             'formRenderables' => $formRenderables,
-            'formPersistenceIdentifier' => $formPersistenceIdentifier
+            'formPersistenceIdentifier' => $formPersistenceIdentifier,
+            'newDataExists' => $newDataExists,
+            'lastView' => $lastView
         ]);
         $this->assignDefaults();
+
+        // For current formDefinition, add/replace lastView timestamp to uc with current time
+        $userConfigurationData = $this->BEUser->uc['tx_formtodatabase'] ?: [];
+        $userConfigurationData['lastView'][$formDefinition->getIdentifier()] = time();
+        $this->BEUser->writeUC(['tx_formtodatabase' => $userConfigurationData]);
     }
 
     /**

@@ -3,7 +3,13 @@
 	  xmlns:ftdb="http://typo3.org/ns/Lavitto/FormToDatabase/ViewHelpers"
 	  data-namespace-typo3-fluid="true">
 
+<f:variable name="isNew"><f:if condition="{f:format.date(date: formResult.crdate, format:'U')} > {lastView}">1</f:if></f:variable>
 <tr>
+	<f:if condition="{newDataExists}">
+		<td><f:if condition="{isNew}">&nbsp;
+			<core:icon identifier="show-new"/>
+		</f:if></td>
+	</f:if>
 	<td>{formResult.crdate -> f:format.date(format: '{dateFormat} {timeFormat}')}</td>
 	<f:for each="{formRenderables}" as="renderable">
 		<f:if condition="{renderable.renderingOptions.listView}">
