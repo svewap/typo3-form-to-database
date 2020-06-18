@@ -10,9 +10,11 @@ namespace Lavitto\FormToDatabase\Domain\Finishers;
 
 use Lavitto\FormToDatabase\Domain\Model\FormResult;
 use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
 use TYPO3\CMS\Extbase\Domain\Model\FileReference;
 use TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException;
+use TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager;
 use TYPO3\CMS\Form\Domain\Finishers\AbstractFinisher;
 use TYPO3\CMS\Form\Domain\Model\FormDefinition;
 use TYPO3\CMS\Form\Domain\Model\FormElements\FormElementInterface;
@@ -95,6 +97,14 @@ class FormToDatabaseFinisher extends AbstractFinisher
             $formResult->setFormIdentifier($formIdentifier);
 
             $this->formResultRepository->add($formResult);
+            $persistenceManager = GeneralUtility::makeInstance(PersistenceManager::class);
+            $persistenceManager->persistAll();
+
+            $this->finisherContext->getFinisherVariableProvider()->add(
+                $this->shortFinisherIdentifier,
+                'formToDatabase.formResult',
+                $formResult
+            );
         }
     }
 }
