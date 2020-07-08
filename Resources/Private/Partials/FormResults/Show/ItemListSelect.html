@@ -2,19 +2,19 @@
 	  xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
 	  xmlns:ftdb="http://typo3.org/ns/Lavitto/FormToDatabase/ViewHelpers"
 	  data-namespace-typo3-fluid="true">
-
-<div class="t3js-modal modal fade modal-severity-notice modal-style-default modal-size-medium"
-	 id="itemListSelect" tabindex="-1" role="dialog" aria-hidden="true">
-	<div class="modal-dialog" role="document">
-		<div class="t3js-modal-content modal-content">
-			<f:form action="updateItemListSelect">
+<f:form action="updateItemListSelect">
+	<div class="t3js-modal modal fade modal-severity-notice modal-style-default modal-size-medium"
+		 id="itemListSelect" tabindex="-1" role="dialog" aria-hidden="true">
+		<div class="modal-dialog" role="document">
+			<div class="t3js-modal-content modal-content">
 				<div class="modal-header">
 					<button type="submit" class="btn btn-default btn-sm t3js-modal-close" style="float: right;"
 							data-dismiss="modal" aria-label="Close">
 						<core:icon identifier="actions-close"/>
 						<f:translate key="LLL:EXT:core/Resources/Private/Language/locallang_common.xlf:close"/>
 					</button>
-					<f:form.button class="btn btn-default btn-sm t3js-modal-close" style="float: right;margin-right: 5px;">
+					<f:form.button class="btn btn-default btn-sm t3js-modal-close"
+								   style="float: right;margin-right: 5px;">
 						<core:icon identifier="actions-document-save-close"/>
 						<f:translate key="LLL:EXT:core/Resources/Private/Language/locallang_common.xlf:saveAndClose"/>
 					</f:form.button>
@@ -62,9 +62,9 @@
 				</div>
 				<f:form.hidden name="formPersistenceIdentifier" value="{formPersistenceIdentifier}"/>
 				<br/>
-			</f:form>
+			</div>
 		</div>
 	</div>
-</div>
+</f:form>
 
 </html>
