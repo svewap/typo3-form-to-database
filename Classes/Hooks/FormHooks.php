@@ -109,10 +109,10 @@ class FormHooks
         //Generate new identifier
         $oldIdentifier = $yaml['identifier'];
         $cleanedIdentifier = preg_replace('/(.*)-([a-z0-9]{13})/', '$1', $yaml['identifier']);
-        $newIdentifier = uniqid($cleanedIdentifier . "-");
+        $newIdentifier = uniqid($cleanedIdentifier . '-', true);
 
         // Set new unique filename and update form definition with new identifier
-        $newFilename = "{$newIdentifier}.form.yaml.deleted";
+        $newFilename = $newIdentifier . '.form.yaml.deleted';
         $yaml['identifier'] = $newIdentifier;
         $this->formPersistenceManager->save($formPersistenceIdentifier, $yaml);
 
