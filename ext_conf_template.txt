@@ -7,3 +7,6 @@ hideLocationInList = 0
 
 # cat=CSV-Settings; type=string; label=CSV-Delimiter
 csvDelimiter = ;
+
+# cat=CSV-Settings; type=boolean; label=Show only filename of upload-fields in csv-file
+csvOnlyFilenameOfUploadFields = 0

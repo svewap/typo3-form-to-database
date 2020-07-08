@@ -58,6 +58,11 @@ class FormValueUtility implements SingletonInterface
     protected const COMBINED_FILE_IDENTIFIER_REGEX = '^([1-9]{1}[0-9]*)(\:)(.*)$';
 
     /**
+     * @var ExtConfUtility
+     */
+    protected static $extConfUtility;
+
+    /**
      * Converts a form value from database value to a human readable output
      *
      * @param FormElementInterface $element
@@ -84,12 +89,14 @@ class FormValueUtility implements SingletonInterface
                 if (is_string($value) && preg_match('/' . self::COMBINED_FILE_IDENTIFIER_REGEX . '/', $value)) {
                     $fileLink = self::getFileLink($value);
                     if ($fileLink !== '') {
+                        $label = PathUtility::basename($value);
                         if ($outputType === self::OUTPUT_TYPE_HTML) {
-                            $label = PathUtility::basename($value);
                             if ($cropText === true) {
                                 $label = self::cropText($label);
                             }
                             $value = '<a href="' . $fileLink . '" target="_blank" title="' . $value . '">' . $label . '</a>';
+                        } elseif (self::getExtConfUtility()->getConfig('csvOnlyFilenameOfUploadFields') === true) {
+                            $value = $label;
                         } else {
                             $value = $fileLink;
                         }
@@ -153,8 +160,12 @@ class FormValueUtility implements SingletonInterface
             $fileObject = null;
         }
         if ($fileObject instanceof FileInterface) {
-            $publicUrl = PathUtility::getAbsoluteWebPath('../' . $fileObject->getPublicUrl());
-            $fileLink = GeneralUtility::locationHeaderUrl($publicUrl);
+            if ($fileObject->getStorage()->isPublic() === true) {
+                $publicUrl = PathUtility::getAbsoluteWebPath('../' . $fileObject->getPublicUrl());
+                $fileLink = GeneralUtility::locationHeaderUrl($publicUrl);
+            } else {
+                $fileLink = $fileObject->getPublicUrl();
+            }
         }
         return $fileLink;
     }
@@ -230,5 +241,16 @@ class FormValueUtility implements SingletonInterface
             $validTimeZone = DateTimeZone::UTC;
         }
         return new DateTimeZone($validTimeZone);
+    }
+
+    /**
+     * @return ExtConfUtility
+     */
+    protected static function getExtConfUtility(): ExtConfUtility
+    {
+        if (self::$extConfUtility === null) {
+            self::$extConfUtility = GeneralUtility::makeInstance(ExtConfUtility::class);
+        }
+        return self::$extConfUtility;
     }
 }

@@ -28,7 +28,8 @@ class ExtConfUtility implements SingletonInterface
      */
     protected $defaultExtConf = [
         'hideLocationInList' => false,
-        'csvDelimiter' => ';'
+        'csvDelimiter' => ';',
+        'csvOnlyFilenameOfUploadFields' => false
     ];
 
     /**
@@ -42,6 +43,7 @@ class ExtConfUtility implements SingletonInterface
             $extConf = unserialize($extConfSerialized, ['allowed_classes' => false]);
         }
         $this->extConf = array_merge($this->defaultExtConf, $extConf);
+        $this->validateExtConf();
     }
 
     /**
@@ -58,10 +60,28 @@ class ExtConfUtility implements SingletonInterface
      * Gets a configuration
      *
      * @param string $key
-     * @return string|null
+     * @return mixed
      */
-    public function getConfig(string $key): ?string
+    public function getConfig(string $key)
     {
-        return trim($this->extConf[$key]);
+        return $this->extConf[$key];
+    }
+
+    /**
+     * Validates the configuration
+     */
+    protected function validateExtConf(): void
+    {
+        foreach ($this->defaultExtConf as $field => $value) {
+            if (is_bool($value) === true) {
+                $this->extConf[$field] = (bool)$this->extConf[$field];
+            } elseif (is_int($value) === true) {
+                $this->extConf[$field] = (int)$this->extConf[$field];
+            } elseif (is_float($value) === true) {
+                $this->extConf[$field] = (float)$this->extConf[$field];
+            } elseif (is_string($value) === true) {
+                $this->extConf[$field] = trim((string)$this->extConf[$field]);
+            }
+        }
     }
 }
