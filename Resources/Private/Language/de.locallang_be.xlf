@@ -21,7 +21,7 @@
             </trans-unit>
             <trans-unit id="index.latest" xml:space="preserve">
                 <source>Latest data</source>
-                <target>Neueste data</target>
+                <target>Aktuellste Daten</target>
             </trans-unit>
             <trans-unit id="show.results_for" xml:space="preserve">
                 <source>Results of form "%s"</source>
