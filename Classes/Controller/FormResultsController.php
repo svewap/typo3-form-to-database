@@ -328,7 +328,8 @@ class FormResultsController extends FormManagerController
             FilePersistenceSlot::COMMAND_FILE_MOVE,
             str_replace('.deleted', '', $formDefinitionPath)
         );
-        $resourceFactory = ResourceFactory::getInstance();
+        /** @var ResourceFactory $resourceFactory */
+        $resourceFactory = GeneralUtility::makeInstance(ResourceFactory::class);
 
         /** @var File $file */
         $file = $resourceFactory->getFileObjectFromCombinedIdentifier($formDefinitionPath);

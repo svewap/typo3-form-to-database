@@ -153,7 +153,8 @@ class FormValueUtility implements SingletonInterface
     protected static function getFileLink(string $combinedFileIdentifier): string
     {
         $fileLink = '';
-        $resourceFactory = ResourceFactory::getInstance();
+        /** @var ResourceFactory $resourceFactory */
+        $resourceFactory = GeneralUtility::makeInstance(ResourceFactory::class);
         try {
             $fileObject = $resourceFactory->getFileObjectFromCombinedIdentifier($combinedFileIdentifier);
         } catch (Exception $e) {

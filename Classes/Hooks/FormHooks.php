@@ -76,7 +76,7 @@ class FormHooks
         /** @var FormPersistenceManagerInterface $formPersistenceManager */
         $this->formPersistenceManager = GeneralUtility::makeInstance(FormPersistenceManager::class);
         $this->formPersistenceManager->initializeObject();
-        $this->formPersistenceManager->injectResourceFactory(ResourceFactory::getInstance());
+        $this->formPersistenceManager->injectResourceFactory(GeneralUtility::makeInstance(ResourceFactory::class));
 
         /** @var StorageRepository $storageRepository */
         $storageRepository = $this->objectManager->get(StorageRepository::class);
