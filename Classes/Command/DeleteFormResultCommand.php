@@ -11,12 +11,12 @@ namespace Lavitto\FormToDatabase\Command;
 use Lavitto\FormToDatabase\Domain\Model\FormResult;
 use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Exception\InvalidArgumentException;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Object\Exception;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException;
 use TYPO3\CMS\Extbase\Persistence\Exception\InvalidQueryException;
@@ -50,6 +50,7 @@ class DeleteFormResultCommand extends Command
      *
      * @param InputInterface $input
      * @param OutputInterface $output
+     * @throws Exception
      */
     public function initialize(InputInterface $input, OutputInterface $output): void
     {
@@ -78,32 +79,38 @@ class DeleteFormResultCommand extends Command
      *
      * @param InputInterface $input
      * @param OutputInterface $output
+     * @return int
      * @throws InvalidQueryException
      * @throws IllegalObjectTypeException
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $io = new SymfonyStyle($input, $output);
         $maxAge = (int)$input->getArgument('maxAge');
-        if ($maxAge === 0) {
-            return 1;
-        }
-        $formResults = $this->formResultRepository->findByMaxAge($maxAge);
-        $count = $formResults->count();
-        if ($count > 0) {
-            /** @var FormResult $formResult */
-            foreach ($formResults as $formResult) {
-                $this->formResultRepository->remove($formResult);
-            }
-            $this->persistenceManager->persistAll();
-        }
-        if ($output->isVerbose()) {
-            $io = new SymfonyStyle($input, $output);
+
+        $ret = 1;
+        if ($maxAge > 0) {
+            $formResults = $this->formResultRepository->findByMaxAge($maxAge);
+            $count = $formResults->count();
             if ($count > 0) {
-                $io->success($count . ' form results deleted.');
-            } else {
-                $io->success('Nothing to delete.');
+                /** @var FormResult $formResult */
+                foreach ($formResults as $formResult) {
+                    $this->formResultRepository->remove($formResult);
+                }
+                $this->persistenceManager->persistAll();
             }
+            if ($output->isVerbose()) {
+                if ($count > 0) {
+                    $io->success($count . ' form results deleted.');
+                } else {
+                    $io->success('Nothing to delete.');
+                }
+            }
+            $ret = 0;
+        } else {
+            $io->error('maxAge must be a valid integer');
         }
-        return 0;
+
+        return $ret;
     }
 }
