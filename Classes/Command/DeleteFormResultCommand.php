@@ -85,7 +85,7 @@ class DeleteFormResultCommand extends Command
     {
         $maxAge = (int)$input->getArgument('maxAge');
         if ($maxAge === 0) {
-            throw new InvalidArgumentException('maxAge must be a valid integer', 1565938870);
+            return 1;
         }
         $formResults = $this->formResultRepository->findByMaxAge($maxAge);
         $count = $formResults->count();
@@ -104,5 +104,6 @@ class DeleteFormResultCommand extends Command
                 $io->success('Nothing to delete.');
             }
         }
+        return 0;
     }
 }
