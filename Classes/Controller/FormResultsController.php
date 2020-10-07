@@ -263,9 +263,8 @@ class FormResultsController extends FormManagerController
         $this->assignDefaults();
 
         // For current formDefinition, add/replace lastView timestamp to uc with current time
-        $userConfigurationData = $this->BEUser->uc['tx_formtodatabase'] ?: [];
-        $userConfigurationData['lastView'][$formDefinition->getIdentifier()] = time();
-        $this->BEUser->writeUC(['tx_formtodatabase' => $userConfigurationData]);
+        $this->BEUser->uc['tx_formtodatabase']['lastView'][$formDefinition->getIdentifier()] = time();
+        $this->BEUser->writeUC();
     }
 
     /**
