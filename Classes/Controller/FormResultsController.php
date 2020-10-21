@@ -132,7 +132,6 @@ class FormResultsController extends FormManagerController
         $this->BEUser = $GLOBALS['BE_USER'];
     }
 
-
     /**
      * Initialize Show Action
      */
@@ -179,7 +178,8 @@ class FormResultsController extends FormManagerController
      * @param $formDefinition
      * @return mixed|null
      */
-    private function getCurrentBEUserLastViewTime($formDefinition) {
+    private function getCurrentBEUserLastViewTime($formDefinition)
+    {
         $identifier = is_array($formDefinition) ? $formDefinition['identifier'] : $formDefinition->getIdentifier();
         return $this->BEUser->uc['tx_formtodatabase']['lastView'][$identifier] ?? null;
     }
@@ -187,7 +187,8 @@ class FormResultsController extends FormManagerController
     /**
      * @param $formDefinitions
      */
-    private function enrichFormDefinitionsWithHighestCrDate(&$formDefinitions) {
+    private function enrichFormDefinitionsWithHighestCrDate(&$formDefinitions)
+    {
         $identifiers = array_column($formDefinitions, 'identifier');
         /** @var ConnectionPool $connectionPool */
         $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
@@ -204,7 +205,7 @@ class FormResultsController extends FormManagerController
             )
             ->groupBy('form_identifier')
             ->execute()->fetchAll(FetchMode::NUMERIC);
-        $maxCrDates = array_combine(array_column($result,0), array_column($result,1));
+        $maxCrDates = array_combine(array_column($result, 0), array_column($result, 1));
         foreach ($formDefinitions as &$formDefinition) {
             $formDefinition['maxCrDate'] = $maxCrDates[$formDefinition['identifier']] ?? null;
             $formDefinition['newDataExists'] = $formDefinition['maxCrDate'] > $this->getCurrentBEUserLastViewTime($formDefinition);
@@ -236,9 +237,9 @@ class FormResultsController extends FormManagerController
         $formRenderables = $this->getFormRenderables($formDefinition);
         $lastView = $this->getCurrentBEUserLastViewTime($formDefinition);
         //Find if any new data exists
-        if($lastView) {
-            foreach($formResults as $formResult) {
-                if($formResult->getCrdate() > new DateTime("@$lastView")) {
+        if ($lastView) {
+            foreach ($formResults as $formResult) {
+                if ($formResult->getCrdate() > new DateTime("@$lastView")) {
                     $newDataExists = true;
                 }
             }
