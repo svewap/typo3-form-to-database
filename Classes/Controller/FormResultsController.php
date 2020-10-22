@@ -132,7 +132,6 @@ class FormResultsController extends FormManagerController
         $this->BEUser = $GLOBALS['BE_USER'];
     }
 
-
     /**
      * Initialize Show Action
      */
@@ -179,7 +178,8 @@ class FormResultsController extends FormManagerController
      * @param $formDefinition
      * @return mixed|null
      */
-    private function getCurrentBEUserLastViewTime($formDefinition) {
+    private function getCurrentBEUserLastViewTime($formDefinition)
+    {
         $identifier = is_array($formDefinition) ? $formDefinition['identifier'] : $formDefinition->getIdentifier();
         return $this->BEUser->uc['tx_formtodatabase']['lastView'][$identifier] ?? null;
     }
@@ -187,7 +187,8 @@ class FormResultsController extends FormManagerController
     /**
      * @param $formDefinitions
      */
-    private function enrichFormDefinitionsWithHighestCrDate(&$formDefinitions) {
+    private function enrichFormDefinitionsWithHighestCrDate(&$formDefinitions)
+    {
         $identifiers = array_column($formDefinitions, 'identifier');
         /** @var ConnectionPool $connectionPool */
         $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
@@ -204,7 +205,7 @@ class FormResultsController extends FormManagerController
             )
             ->groupBy('form_identifier')
             ->execute()->fetchAll(FetchMode::NUMERIC);
-        $maxCrDates = array_combine(array_column($result,0), array_column($result,1));
+        $maxCrDates = array_combine(array_column($result, 0), array_column($result, 1));
         foreach ($formDefinitions as &$formDefinition) {
             $formDefinition['maxCrDate'] = $maxCrDates[$formDefinition['identifier']] ?? null;
             $formDefinition['newDataExists'] = $formDefinition['maxCrDate'] > $this->getCurrentBEUserLastViewTime($formDefinition);
@@ -236,9 +237,9 @@ class FormResultsController extends FormManagerController
         $formRenderables = $this->getFormRenderables($formDefinition);
         $lastView = $this->getCurrentBEUserLastViewTime($formDefinition);
         //Find if any new data exists
-        if($lastView) {
-            foreach($formResults as $formResult) {
-                if($formResult->getCrdate() > new DateTime("@$lastView")) {
+        if ($lastView) {
+            foreach ($formResults as $formResult) {
+                if ($formResult->getCrdate() > new DateTime("@$lastView")) {
                     $newDataExists = true;
                 }
             }
@@ -278,7 +279,8 @@ class FormResultsController extends FormManagerController
     {
         $charset = 'UTF-8';
         $formPersistenceIdentifier = $this->request->getArgument('formPersistenceIdentifier');
-        $csvContent = "\xEF\xBB\xBF" . $this->getCsvContent($formPersistenceIdentifier);
+        $filtered = $this->request->hasArgument('filtered') === true && $this->request->getArgument('filtered') === '1';
+        $csvContent = "\xEF\xBB\xBF" . $this->getCsvContent($formPersistenceIdentifier, $filtered);
         header('Content-Type: application/csv; charset=' . $charset);
         header('Content-Disposition: attachment; filename="' . $this->getCsvFileName($formPersistenceIdentifier) . '";');
         header('Content-Length: ' . strlen($csvContent));
@@ -522,11 +524,12 @@ class FormResultsController extends FormManagerController
      * Generates and returns the csv content by a given formPersistenceIdentifier
      *
      * @param string $formPersistenceIdentifier
+     * @param bool $filtered
      * @return string
      * @throws InvalidQueryException
      * @throws RenderingException
      */
-    protected function getCsvContent(string $formPersistenceIdentifier): string
+    protected function getCsvContent(string $formPersistenceIdentifier, bool $filtered = false): string
     {
         $csvDelimiter = $this->extConfUtility->getConfig('csvDelimiter') ?? ';';
         $csvContent = [];
@@ -534,6 +537,16 @@ class FormResultsController extends FormManagerController
         $formResults = $this->formResultRepository->findByFormPersistenceIdentifier($formPersistenceIdentifier);
         $formDefinition = $this->getFormDefinitionObject($formPersistenceIdentifier, true);
         $formRenderables = $this->getFormRenderables($formDefinition);
+
+        if ($filtered === true) {
+            /** @var AbstractFormElement $renderable */
+            foreach ($formRenderables as $i => $renderable) {
+                $renderingOptions = $renderable->getRenderingOptions();
+                if (isset($renderingOptions['listView']) && $renderingOptions['listView'] !== 1) {
+                    unset($formRenderables[$i]);
+                }
+            }
+        }
 
         $this->emitSignal(self::SIGNAL_FORMSRESULT_DOWNLOAD_CSV_ACTION, [
             $formPersistenceIdentifier,
@@ -629,15 +642,28 @@ class FormResultsController extends FormManagerController
             $buttonBar->addButton($backFormButton, ButtonBar::BUTTON_POSITION_LEFT);
 
             if ($formPersistenceIdentifier !== null && $showCsvDownload === true) {
+                $urlParameters = [
+                    'tx_formtodatabase_web_formtodatabaseformresults' => [
+                        'formPersistenceIdentifier' => $formPersistenceIdentifier,
+                        'action' => 'downloadCsv',
+                        'controller' => 'FormResults'
+                    ]
+                ];
+
+                // Full list download-button
                 $downloadCsvFormButton = $buttonBar->makeLinkButton()
-                    ->setHref($this->getModuleUrl('web_FormToDatabaseFormresults', [
-                        'tx_formtodatabase_web_formtodatabaseformresults' => [
-                            'formPersistenceIdentifier' => $formPersistenceIdentifier,
-                            'action' => 'downloadCsv',
-                            'controller' => 'FormResults'
-                        ]
-                    ]))
+                    ->setHref($this->getModuleUrl('web_FormToDatabaseFormresults', $urlParameters))
                     ->setTitle($this->getLanguageService()->sL('LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.buttons.download_csv'))
+                    ->setShowLabelText(true)
+                    ->setIcon($this->view->getModuleTemplate()->getIconFactory()->getIcon('actions-download',
+                        Icon::SIZE_SMALL));
+                $buttonBar->addButton($downloadCsvFormButton, ButtonBar::BUTTON_POSITION_LEFT, 2);
+
+                // Filtered list download-button
+                $urlParameters['tx_formtodatabase_web_formtodatabaseformresults']['filtered'] = true;
+                $downloadCsvFormButton = $buttonBar->makeLinkButton()
+                    ->setHref($this->getModuleUrl('web_FormToDatabaseFormresults', $urlParameters))
+                    ->setTitle($this->getLanguageService()->sL('LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.buttons.download_csv_filtered'))
                     ->setShowLabelText(true)
                     ->setIcon($this->view->getModuleTemplate()->getIconFactory()->getIcon('actions-download',
                         Icon::SIZE_SMALL));

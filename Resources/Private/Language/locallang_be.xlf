@@ -37,7 +37,10 @@
                 <source>Back to overview</source>
             </trans-unit>
             <trans-unit id="show.buttons.download_csv" xml:space="preserve">
-                <source>Download results as CSV</source>
+                <source>CSV-Download (all columns)</source>
+            </trans-unit>
+            <trans-unit id="show.buttons.download_csv_filtered" xml:space="preserve">
+                <source>CSV-Download (only visible)</source>
             </trans-unit>
             <trans-unit id="show.buttons.column_settings" xml:space="preserve">
                 <source>Columns</source>

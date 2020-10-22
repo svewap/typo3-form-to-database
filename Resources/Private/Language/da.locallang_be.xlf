@@ -48,7 +48,7 @@
                 <target>Tilbage til oversigten</target>
             </trans-unit>
             <trans-unit id="show.buttons.download_csv" xml:space="preserve">
-                <source>Download results as CSV</source>
+                <source>CSV-Download (all columns)</source>
                 <target>Download formulardata som CSV</target>
             </trans-unit>
             <trans-unit id="show.buttons.column_settings" xml:space="preserve">

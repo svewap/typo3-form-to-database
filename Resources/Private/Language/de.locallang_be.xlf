@@ -48,8 +48,12 @@
                 <target>zurück zur Übersicht</target>
             </trans-unit>
             <trans-unit id="show.buttons.download_csv" xml:space="preserve">
-                <source>Download results as CSV</source>
-                <target>Resultate als CSV herunterladen</target>
+                <source>CSV-Download (all columns)</source>
+                <target>CSV-Download (alle Spalten)</target>
+            </trans-unit>
+            <trans-unit id="show.buttons.download_csv_filtered" xml:space="preserve">
+                <source>CSV-Download (only visible)</source>
+                <target>CSV-Download (nur aktivierte)</target>
             </trans-unit>
             <trans-unit id="show.buttons.column_settings" xml:space="preserve">
                 <source>Columns</source>
