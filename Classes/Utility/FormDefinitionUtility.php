@@ -37,13 +37,25 @@ class FormDefinitionUtility
     /**
      * @param array|FormDefinition $formDefinition
      * @param bool $enableAllInListView
+     * @param bool $force
      */
-    public function addFieldStateIfDoesNotExist(&$formDefinition, $enableAllInListView = false): void
-    {
-        $fieldStateExists = is_object($formDefinition) ? isset($formDefinition->getRenderingOptions()['fieldState']) : isset($formDefinition['renderingOptions']['fieldState']);
-        //If no state exists - create state from current fields
-        if (!$fieldStateExists) {
-            $fieldState = $this->getFieldsFromFormDefinition($formDefinition);
+    public function addFieldStateIfDoesNotExist(
+        &$formDefinition,
+        bool $enableAllInListView = false,
+        bool $force = false
+    ): void {
+        $fields = [];
+        if (is_object($formDefinition)) {
+            if (isset($formDefinition->getRenderingOptions()['fieldState'])) {
+                $fields = $formDefinition->getRenderingOptions()['fieldState'];
+            }
+        } elseif (isset($formDefinition['renderingOptions']['fieldState'])) {
+            $fields = $formDefinition['renderingOptions']['fieldState'];
+        }
+
+        // If no state exists - create state from current fields
+        if (empty($fields) || $force === true) {
+            $fieldState = $this->getFieldsFromFormDefinition($formDefinition, $fields);
             $fieldCount = 0;
             //Mark all fields in state as not deleted
             $fieldState = array_map(function ($field) use (&$fieldCount, $enableAllInListView) {
@@ -62,31 +74,30 @@ class FormDefinitionUtility
 
     /**
      * @param FormDefinition|array $formDefinition
+     * @param array $fields
      * @return array
      */
-    protected function getFieldsFromFormDefinition($formDefinition): array
+    protected function getFieldsFromFormDefinition($formDefinition, array $fields = []): array
     {
-        $fields = [];
         $renderables = is_object($formDefinition) ? $formDefinition->getRenderablesRecursively() : $formDefinition['renderables'];
         if (is_object($formDefinition)) {
-            foreach ($renderables as $element) {
-                if (get_class($element) === 'TYPO3\CMS\Form\Domain\Model\FormElements\Page') {
+            foreach ($renderables as $renderable) {
+                if (get_class($renderable) === 'TYPO3\CMS\Form\Domain\Model\FormElements\Page') {
                     continue;
                 }
-                $identifier = $element->getIdentifier();
+                $identifier = $renderable->getIdentifier();
                 $fields[$identifier] = [
                     'identifier' => $identifier,
-                    'label' => $element->getLabel(),
-                    'type' => $element->getType()
+                    'label' => $renderable->getLabel(),
+                    'type' => $renderable->getType()
                 ];
             }
         } else {
-            foreach ($renderables as $steps) {
-                if (!$steps['renderables']) {
-                    continue;
-                }
-                foreach ($steps['renderables'] as $field) {
-                    $fields[$field['identifier']] = $this->filterFieldAttributes($field);
+            foreach ($renderables as $renderable) {
+                if ($renderable['renderables']) {
+                    $fields = $this->getFieldsFromFormDefinition($renderable, $fields);
+                } elseif ($renderable['identifier']) {
+                    $fields[$renderable['identifier']] = $this->filterFieldAttributes($renderable);
                 }
             }
         }
@@ -111,7 +122,7 @@ class FormDefinitionUtility
      */
     public function updateFormDefinition($formDefinition)
     {
-        $this->addFieldStateIfDoesNotExist($formDefinition);
+        $this->addFieldStateIfDoesNotExist($formDefinition, false, true);
         //Make map of next identifier for each field type
         $this->makeNextIdentifiersMap($formDefinition['renderingOptions']['fieldState']);
 
