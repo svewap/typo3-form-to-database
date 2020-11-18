@@ -498,9 +498,28 @@ class FormResultsController extends FormManagerController
         $useFieldStateDataAsRenderables = false
     ): FormDefinition {
         $configuration = $this->getFormDefinition($formPersistenceIdentifier, $useFieldStateDataAsRenderables);
+        if (isset($configuration['renderables']) && !empty($configuration['renderables'])) {
+            $this->filterExcludedFormFieldsInConfiguration($configuration['renderables']);
+        }
         /** @var ArrayFormFactory $arrayFormFactory */
         $arrayFormFactory = $this->objectManager->get(ArrayFormFactory::class);
         return $arrayFormFactory->build($configuration);
+    }
+
+    /**
+     * Removes excluded renderables from configuration
+     *
+     * @param array $renderables
+     */
+    protected function filterExcludedFormFieldsInConfiguration(array &$renderables): void
+    {
+        foreach ($renderables as $i => $renderable) {
+            if (in_array($renderable['type'], FormToDatabaseFinisher::EXCLUDE_FIELDS, true) === true) {
+                unset($renderables[$i]);
+            } elseif (isset($renderable['renderables']) && !empty($renderable['renderables'])) {
+                $this->filterExcludedFormFieldsInConfiguration($renderables[$i]['renderables']);
+            }
+        }
     }
 
     /**
