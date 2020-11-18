@@ -28,6 +28,11 @@ class FormToDatabaseFinisher extends AbstractFinisher
 {
 
     /**
+     * Dont save this fields in database (also used in FromResultsController)
+     */
+    public const EXCLUDE_FIELDS = ['Honeypot', 'StaticText', 'ContentElement', 'GridRow', 'SummaryPage'];
+
+    /**
      * The FormResultRepository
      *
      * @var FormResultRepository
@@ -76,7 +81,8 @@ class FormToDatabaseFinisher extends AbstractFinisher
             $formValues = [];
             foreach ($this->finisherContext->getFormValues() as $fieldName => $fieldValue) {
                 $fieldElement = $formDefinition->getElementByIdentifier($fieldName);
-                if ($fieldElement instanceof FormElementInterface && $fieldElement->getType() !== 'Honeypot') {
+                if ($fieldElement instanceof FormElementInterface && in_array($fieldElement->getType(),
+                        self::EXCLUDE_FIELDS, true) === false) {
                     if ($fieldValue instanceof FileReference) {
                         $formValues[$fieldName] = $fieldValue->getOriginalResource()->getCombinedIdentifier();
                     } else {

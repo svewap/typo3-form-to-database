@@ -14,6 +14,7 @@ namespace Lavitto\FormToDatabase\Controller;
 use DateTime;
 use Doctrine\DBAL\FetchMode;
 use Exception;
+use Lavitto\FormToDatabase\Domain\Finishers\FormToDatabaseFinisher;
 use Lavitto\FormToDatabase\Domain\Model\FormResult;
 use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
 use Lavitto\FormToDatabase\Helpers\MiscHelper;
@@ -513,7 +514,8 @@ class FormResultsController extends FormManagerController
         $formRenderables = [];
         /** @var AbstractFormElement $renderable */
         foreach ($formDefinition->getRenderablesRecursively() as $renderable) {
-            if ($renderable instanceof AbstractFormElement) {
+            if ($renderable instanceof AbstractFormElement && in_array($renderable->getType(),
+                    FormToDatabaseFinisher::EXCLUDE_FIELDS, true) === false) {
                 $formRenderables[$renderable->getIdentifier()] = $renderable;
             }
         }
