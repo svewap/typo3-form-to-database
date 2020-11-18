@@ -18,6 +18,7 @@ use Lavitto\FormToDatabase\Domain\Finishers\FormToDatabaseFinisher;
 use Lavitto\FormToDatabase\Domain\Model\FormResult;
 use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
 use Lavitto\FormToDatabase\Helpers\MiscHelper;
+use Lavitto\FormToDatabase\Service\FormResultDatabaseService;
 use Lavitto\FormToDatabase\Utility\ExtConfUtility;
 use Lavitto\FormToDatabase\Utility\FormDefinitionUtility;
 use Lavitto\FormToDatabase\Utility\FormValueUtility;
@@ -106,6 +107,11 @@ class FormResultsController extends FormManagerController
     protected $BEUser;
 
     /**
+     * @var FormResultDatabaseService
+     */
+    protected $formResultDatabaseService;
+
+    /**
      * Injects the FormResultRepository
      *
      * @param FormResultRepository $formResultRepository
@@ -113,6 +119,16 @@ class FormResultsController extends FormManagerController
     public function injectFormResultRepository(FormResultRepository $formResultRepository): void
     {
         $this->formResultRepository = $formResultRepository;
+    }
+
+    /**
+     * Injects the FormResultRepository
+     *
+     * @param FormResultDatabaseService $formResultDatabaseService
+     */
+    public function injectFormResultDatabaseService(FormResultDatabaseService $formResultDatabaseService): void
+    {
+        $this->formResultDatabaseService = $formResultDatabaseService;
     }
 
     /**
@@ -385,9 +401,10 @@ class FormResultsController extends FormManagerController
      */
     protected function getAvailableFormDefinitions(): array
     {
+        $formResults = $this->formResultDatabaseService->getAllFormResultsForPersistenceIdentifier();
         $availableFormDefinitions = [];
         foreach ($this->formPersistenceManager->listForms() as $formDefinition) {
-            $formDefinition['numberOfResults'] = $this->formResultRepository->countByFormPersistenceIdentifier($formDefinition['persistenceIdentifier']);
+            $formDefinition['numberOfResults'] = $formResults[$formDefinition['persistenceIdentifier']] ?? 0;
             $availableFormDefinitions[] = $formDefinition;
         }
         return $availableFormDefinitions;
