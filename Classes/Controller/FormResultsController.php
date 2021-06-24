@@ -404,9 +404,12 @@ class FormResultsController extends FormManagerController
         $formResults = $this->formResultDatabaseService->getAllFormResultsForPersistenceIdentifier();
         $availableFormDefinitions = [];
         foreach ($this->formPersistenceManager->listForms() as $formDefinition) {
-            $formDefinition['numberOfResults'] = $formResults[$formDefinition['persistenceIdentifier']] ?? 0;
-            $availableFormDefinitions[] = $formDefinition;
-        }
+			$form = $this->formPersistenceManager->load($formDefinition['persistenceIdentifier']);
+			if(array_search('FormToDatabase', array_column($form['finishers'], 'identifier')) !== false) {
+				$formDefinition['numberOfResults'] = $formResults[$formDefinition['persistenceIdentifier']] ?? 0;
+				$availableFormDefinitions[] = $formDefinition;
+			}
+		}
         return $availableFormDefinitions;
     }
 
