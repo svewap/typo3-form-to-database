@@ -122,7 +122,7 @@ class FormValueUtility implements SingletonInterface
             default:
                 if (is_string($value)) {
                     $value = htmlspecialchars((string)$value);
-                    if ($outputType === self::OUTPUT_TYPE_HTML) {
+                    if ($outputType === self::OUTPUT_TYPE_HTML && $cropText === true) {
                         $value = self::cropText($value);
                     }
                 } elseif (is_array($value)) {
