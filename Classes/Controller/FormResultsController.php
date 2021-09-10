@@ -394,22 +394,22 @@ class FormResultsController extends FormManagerController
 
     /**
      * List all formDefinitions which can be loaded form persistence manager.
-     * Enrich this data by a the number of results.
+     * Enrich this data by the number of results.
      *
      * @return array
-     * @throws InvalidQueryException
      */
     protected function getAvailableFormDefinitions(): array
     {
         $formResults = $this->formResultDatabaseService->getAllFormResultsForPersistenceIdentifier();
         $availableFormDefinitions = [];
         foreach ($this->formPersistenceManager->listForms() as $formDefinition) {
-			$form = $this->formPersistenceManager->load($formDefinition['persistenceIdentifier']);
-			if(array_search('FormToDatabase', array_column($form['finishers'], 'identifier')) !== false) {
-				$formDefinition['numberOfResults'] = $formResults[$formDefinition['persistenceIdentifier']] ?? 0;
-				$availableFormDefinitions[] = $formDefinition;
-			}
-		}
+            $form = $this->formPersistenceManager->load($formDefinition['persistenceIdentifier']);
+            if ($form['finishers'] && in_array('FormToDatabase', array_column($form['finishers'], 'identifier'),
+                    true)) {
+                $formDefinition['numberOfResults'] = $formResults[$formDefinition['persistenceIdentifier']] ?? 0;
+                $availableFormDefinitions[] = $formDefinition;
+            }
+        }
         return $availableFormDefinitions;
     }
 
