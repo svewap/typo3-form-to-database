@@ -67,20 +67,32 @@ class FormToDatabaseFinisher extends AbstractFinisher
     }
 
     /**
-     * Writes the form-result into the database, excludes Honeypot
+     * getFormFieldValues
      *
-     * @throws IllegalObjectTypeException
+     * Recurrsive method to get all form field values including nested ones
+     *
+     * @param  array $fields
+     * @param  array $nestedIdentifier Array of levels nested - populated during recursion
+     * @return array
      */
-    protected function executeInternal(): void
+    private function getFormFieldValues(array $fields, $nestedIdentifier = []): array
     {
-        $formDefinition = $this->finisherContext->getFormRuntime()->getFormDefinition();
-        if ($formDefinition instanceof FormDefinition) {
-            /** @noinspection PhpInternalEntityUsedInspection */
-            $formPersistenceIdentifier = $formDefinition->getPersistenceIdentifier();
+        $formValues = [];
 
-            $formValues = [];
-            foreach ($this->finisherContext->getFormValues() as $fieldName => $fieldValue) {
-                $fieldElement = $formDefinition->getElementByIdentifier($fieldName);
+        foreach ($fields as $fieldName => $fieldValue) {
+            $newNestedIdentifier = $nestedIdentifier;
+
+            if(is_array($fieldValue)) {
+                $newNestedIdentifier[] = $fieldName;
+                $formValues = array_merge($this->getFormFieldValues($fieldValue, $newNestedIdentifier), $formValues);
+            } else {
+                if(count($nestedIdentifier)) {
+                    $fieldNameIdentifier = array_merge($nestedIdentifier, [$fieldName]);
+                    $fieldName = implode('.', $fieldNameIdentifier);
+                }
+
+                $fieldElement = $this->formDefinition->getElementByIdentifier($fieldName);
+
                 if ($fieldElement instanceof FormElementInterface && in_array($fieldElement->getType(),
                         self::EXCLUDE_FIELDS, true) === false) {
                     if ($fieldValue instanceof FileReference) {
@@ -90,10 +102,28 @@ class FormToDatabaseFinisher extends AbstractFinisher
                     }
                 }
             }
+        }
 
-            $delimiter = strrpos($formDefinition->getIdentifier(), '-');
-            $formPluginUid = substr($formDefinition->getIdentifier(), $delimiter + 1);
-            $formIdentifier = substr($formDefinition->getIdentifier(), 0, $delimiter);
+        return $formValues;
+    }
+
+    /**
+     * Writes the form-result into the database, excludes Honeypot
+     *
+     * @throws IllegalObjectTypeException
+     */
+    protected function executeInternal(): void
+    {
+        $this->formDefinition = $this->finisherContext->getFormRuntime()->getFormDefinition();
+        if ($this->formDefinition instanceof FormDefinition) {
+            /** @noinspection PhpInternalEntityUsedInspection */
+            $formPersistenceIdentifier = $this->formDefinition->getPersistenceIdentifier();
+
+            $formValues = $this->getFormFieldValues($this->finisherContext->getFormValues());
+
+            $delimiter = strrpos($this->formDefinition->getIdentifier(), '-');
+            $formPluginUid = substr($this->formDefinition->getIdentifier(), $delimiter + 1);
+            $formIdentifier = substr($this->formDefinition->getIdentifier(), 0, $delimiter);
             $formResult = new FormResult();
             $formResult->setFormPersistenceIdentifier($formPersistenceIdentifier);
             $formResult->setSiteIdentifier($GLOBALS['TYPO3_REQUEST']->getAttribute('site')->getIdentifier());
