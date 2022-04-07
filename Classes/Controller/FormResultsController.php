@@ -549,11 +549,12 @@ class FormResultsController extends FormManagerController
                         $fieldStateField['identifier'] = $nestedIdentifier;
                         $configuration['renderingOptions']['fieldState'][$nestedIdentifier] = $fieldStateField;
 
-                        if($x === (int)$renderable['properties']['maximumCopies']) {
+                        if($x === ((int)$renderable['properties']['maximumCopies'] - 1)) {
                             unset($configuration['renderingOptions']['fieldState'][$field['identifier']]);
                         }
                     }
                 }
+
                 $configuration['renderables'][$p]['renderables'][$i]['renderables'] = $renderableFields;
 
             }
