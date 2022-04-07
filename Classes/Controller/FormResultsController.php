@@ -261,7 +261,6 @@ class FormResultsController extends FormManagerController
                 }
             }
         }
-
         $this->emitSignal(self::SIGNAL_FORMSRESULT_SHOW_ACTION, [
             'formPersistenceIdentifier' => $formPersistenceIdentifier,
             'formResults' => $formResults,
@@ -491,6 +490,8 @@ class FormResultsController extends FormManagerController
     ): array {
         $configuration = $this->formPersistenceManager->load($formPersistenceIdentifier);
 
+        $this->hydrateRepeatableFields($configuration);
+
         if ($useFieldStateDataAsRenderables) {
             //Ensure that fieldState exists
             /** @var FormDefinitionUtility $formDefinitionUtility */
@@ -502,7 +503,82 @@ class FormResultsController extends FormManagerController
             $configuration['renderables'][0]['renderables'] = array_values($configuration['renderingOptions']['fieldState']);
             $configuration['renderables'] = array_intersect_key($configuration['renderables'], [0 => 1]);
         }
+
+
         return $configuration;
+    }
+
+    /**
+     * hydrateRepeatableFields
+     *
+     * Creates repeated fields for any fields which could be repeated
+     *
+     * @param  array $configuration
+     * @return void
+     */
+    protected function hydrateRepeatableFields(array &$configuration): void
+    {
+        foreach($configuration['renderables'] as $p => $pages) {
+            foreach($pages['renderables'] as $i => $renderable) {
+                if(!isset(
+                    $renderable['renderables'],
+                    $renderable['properties'],
+                    $renderable['properties']['maximumCopies']
+                )) {
+                    continue;
+                }
+
+                $childFields = $this->getFieldElements($renderable['renderables']);
+
+                for ($x = 0; $x < $renderable['properties']['maximumCopies']; $x++) {
+                    foreach($childFields as $field) {
+                        $nestedIdentifier = sprintf('%s.%s.%s', $renderable['identifier'], $x, $field['identifier']);
+                        $nestedLabel = sprintf('%s (%s)', $field['label'], ($x + 1));
+
+                        $renderableField = $field;
+                        $renderableField['label'] = $nestedLabel;
+                        $renderableField['identifier'] = $nestedIdentifier;
+                        $renderableFields[] = $renderableField;
+
+                        if(!isset($configuration['renderingOptions']['fieldState'][$field['identifier']])) {
+                            continue;
+                        }
+
+                        $fieldStateField = $configuration['renderingOptions']['fieldState'][$field['identifier']];
+                        $fieldStateField['label'] = $nestedLabel;
+                        $fieldStateField['identifier'] = $nestedIdentifier;
+                        $configuration['renderingOptions']['fieldState'][$nestedIdentifier] = $fieldStateField;
+
+                        if($x === (int)$renderable['properties']['maximumCopies']) {
+                            unset($configuration['renderingOptions']['fieldState'][$field['identifier']]);
+                        }
+                    }
+                }
+                $configuration['renderables'][$p]['renderables'][$i]['renderables'] = $renderableFields;
+
+            }
+        }
+    }
+
+    /**
+     * getFieldElements
+     *
+     * Flatten any gridrows & fieldsets
+     *
+     * @param  mixed $renderables
+     * @return array
+     */
+    protected function getFieldElements(array $renderables): array
+    {
+        $fields = [];
+        foreach($renderables as $renderable) {
+            if(isset($renderable['renderables'])) {
+                $fields = array_merge($fields, $this->getFieldElements($renderable['renderables']));
+            } else {
+                $fields[] = $renderable;
+            }
+        }
+        return $fields;
     }
 
     /**
@@ -521,6 +597,7 @@ class FormResultsController extends FormManagerController
         if (isset($configuration['renderables']) && !empty($configuration['renderables'])) {
             $this->filterExcludedFormFieldsInConfiguration($configuration['renderables']);
         }
+
         /** @var ArrayFormFactory $arrayFormFactory */
         $arrayFormFactory = $this->objectManager->get(ArrayFormFactory::class);
         return $arrayFormFactory->build($configuration);
