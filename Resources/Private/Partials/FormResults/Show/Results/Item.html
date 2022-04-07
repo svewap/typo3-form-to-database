@@ -15,7 +15,7 @@
 		<f:if condition="{renderable.renderingOptions.listView}">
 			<td>
 				<f:format.raw>
-					<ftdb:formValue value="{formResult.resultAsArray.{renderable.identifier}}"
+					<ftdb:formValue value="{renderable.identifier}" results="{formResult.resultAsArray}"
 									element="{renderable}" crop="true"/>
 				</f:format.raw>
 			</td>

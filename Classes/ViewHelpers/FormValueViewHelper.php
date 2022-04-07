@@ -33,8 +33,9 @@ class FormValueViewHelper extends AbstractViewHelper
     public function initializeArguments(): void
     {
         $this->registerArgument('element', FormElementInterface::class, 'the form element', true);
-        $this->registerArgument('value', 'mixed', 'the form result value', true);
-        $this->registerArgument('crop', 'bool', 'the form result value', false, false);
+        $this->registerArgument('value', 'string', 'the identifier', true);
+        $this->registerArgument('results', 'array', 'the form results', true);
+        $this->registerArgument('crop', 'bool', 'should the result be cropped', false, false);
     }
 
     /**
@@ -45,7 +46,7 @@ class FormValueViewHelper extends AbstractViewHelper
      */
     public function render(): string
     {
-        return FormValueUtility::convertFormValue($this->arguments['element'], $this->arguments['value'],
+        return FormValueUtility::convertFormValue($this->arguments['element'], $this->arguments['results'][$this->arguments['value']],
             FormValueUtility::OUTPUT_TYPE_HTML, $this->arguments['crop'] === true);
     }
 }
