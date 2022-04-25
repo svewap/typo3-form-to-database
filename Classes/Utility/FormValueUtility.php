@@ -157,7 +157,7 @@ class FormValueUtility implements SingletonInterface
         }
         if ($fileObject instanceof FileInterface) {
             if ($fileObject->getStorage()->isPublic() === true) {
-                $publicUrl = PathUtility::getAbsoluteWebPath('../' . $fileObject->getPublicUrl());
+                $publicUrl = PathUtility::getAbsoluteWebPath($fileObject->getPublicUrl());
                 $fileLink = GeneralUtility::locationHeaderUrl($publicUrl);
             } else {
                 $fileLink = $fileObject->getPublicUrl();
