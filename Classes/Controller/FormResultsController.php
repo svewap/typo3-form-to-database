@@ -25,6 +25,7 @@ use Lavitto\FormToDatabase\Utility\FormValueUtility;
 use PDO;
 use Psr\Http\Message\ResponseInterface;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -85,6 +86,7 @@ class FormResultsController extends FormManagerController
     protected FormResultRepository $formResultRepository;
     protected BackendUserAuthentication $BEUser;
     protected FormResultDatabaseService $formResultDatabaseService;
+    protected ModuleTemplate $moduleTemplate;
 
     /**
      * Injects the FormResultRepository
@@ -150,6 +152,8 @@ class FormResultsController extends FormManagerController
      */
     public function indexAction(int $page = 1): ResponseInterface
     {
+        $this->moduleTemplate = $this->moduleTemplateFactory->create($this->request);
+
         $this->registerDocheaderButtons();
         $availableFormDefinitions = $this->getAvailableFormDefinitions();
         $this->enrichFormDefinitionsWithHighestCrDate($availableFormDefinitions);
@@ -157,12 +161,11 @@ class FormResultsController extends FormManagerController
         $this->view->assign('deletedForms', $this->getDeletedFormDefinitions($availableFormDefinitions));
         $this->assignDefaults();
 
-        $moduleTemplate = $this->moduleTemplateFactory->create($this->request);
-        $moduleTemplate->setModuleName($this->request->getPluginName() . '_' . $this->request->getControllerName());
-        $moduleTemplate->setFlashMessageQueue($this->controllerContext->getFlashMessageQueue());
-        $moduleTemplate->setContent($this->view->render());
+        $this->moduleTemplate->setModuleName($this->request->getPluginName() . '_' . $this->request->getControllerName());
+        $this->moduleTemplate->setFlashMessageQueue($this->controllerContext->getFlashMessageQueue());
+        $this->moduleTemplate->setContent($this->view->render());
 
-        return $this->htmlResponse($moduleTemplate->renderContent());
+        return $this->htmlResponse($this->moduleTemplate->renderContent());
     }
 
     /**
@@ -216,6 +219,8 @@ class FormResultsController extends FormManagerController
      */
     public function showAction(string $formPersistenceIdentifier): ResponseInterface
     {
+        $this->moduleTemplate = $this->moduleTemplateFactory->create($this->request);
+
         $currentPage = $this->request->getArguments()['currentPage'] ?? 1;
         $newDataExists = false;
         $languageFile = 'LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:';
@@ -265,10 +270,9 @@ class FormResultsController extends FormManagerController
         $this->BEUser->uc['tx_formtodatabase']['lastView'][$formDefinition->getIdentifier()] = time();
         $this->BEUser->writeUC();
 
-        $moduleTemplate = $this->moduleTemplateFactory->create($this->request);
-        $moduleTemplate->setContent($this->view->render());
+        $this->moduleTemplate->setContent($this->view->render());
 
-        return $this->htmlResponse($moduleTemplate->renderContent());
+        return $this->htmlResponse($this->moduleTemplate->renderContent());
     }
 
     /**
@@ -749,7 +753,7 @@ class FormResultsController extends FormManagerController
         bool $showCsvDownload = false
     ): void {
         /** @var ButtonBar $buttonBar */
-        $buttonBar = $this->moduleTemplateFactory->create($this->request)->getDocHeaderComponent()->getButtonBar();
+        $buttonBar = $this->moduleTemplate->getDocHeaderComponent()->getButtonBar();
         $currentRequest = $this->request;
         $moduleName = $currentRequest->getPluginName();
         $getVars = $this->request->getArguments();
