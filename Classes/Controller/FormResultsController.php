@@ -61,15 +61,20 @@ use TYPO3\CMS\Form\Slot\FilePersistenceSlot;
  */
 class FormResultsController extends FormManagerController
 {
+
+    /**
+     *
+     */
     public const SIGNAL_FORMSRESULT_SHOW_ACTION = 'showAction';
     /**
      *
      */
     public const SIGNAL_FORMSRESULT_DOWNLOAD_CSV_ACTION = 'downloadCsvAction';
 
-	/**
-	 *
-	 */
+
+    /**
+     *
+     */
     public const SIGNAL_FORMSRESULT_DELETE_FORM_RESULT_ACTION = 'deleteFormResultAction';
 
     /**
@@ -82,10 +87,29 @@ class FormResultsController extends FormManagerController
      */
     protected const CSV_ENCLOSURE = '"';
 
+    /**
+     * @var ExtConfUtility
+     */
     protected ExtConfUtility $extConfUtility;
+
+    /**
+     * @var FormResultRepository
+     */
     protected FormResultRepository $formResultRepository;
+
+    /**
+     * @var BackendUserAuthentication
+     */
     protected BackendUserAuthentication $BEUser;
+
+    /**
+     * @var FormResultDatabaseService
+     */
     protected FormResultDatabaseService $formResultDatabaseService;
+
+    /**
+     * @var ModuleTemplate
+     */
     protected ModuleTemplate $moduleTemplate;
 
     /**
@@ -118,11 +142,17 @@ class FormResultsController extends FormManagerController
         $this->extConfUtility = $extConfUtility;
     }
 
+    /**
+     * @return void
+     */
     protected function initializeAction()
     {
         $this->BEUser = $GLOBALS['BE_USER'];
     }
 
+    /**
+     * @return void
+     */
     public function initializeShowAction(): void
     {
         $this->pageRenderer->addCssFile(
