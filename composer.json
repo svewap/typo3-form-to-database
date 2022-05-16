@@ -40,9 +40,6 @@
     "ext-json": "*",
     "ext-pdo": "*"
   },
-  "replace": {
-    "lavitto/typo3-form-to-database": "self.version"
-  },
   "autoload": {
     "psr-4": {
       "Lavitto\\FormToDatabase\\": "Classes"
