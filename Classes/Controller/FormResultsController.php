@@ -63,12 +63,10 @@ class FormResultsController extends FormManagerController
      *
      */
     public const SIGNAL_FORMSRESULT_SHOW_ACTION = 'showAction';
-
     /**
      *
      */
     public const SIGNAL_FORMSRESULT_DOWNLOAD_CSV_ACTION = 'downloadCsvAction';
-
     /**
      *
      */
@@ -616,6 +614,9 @@ class FormResultsController extends FormManagerController
                 unset($renderables[$i]);
             } elseif (isset($renderable['renderables']) && !empty($renderable['renderables'])) {
                 $this->filterExcludedFormFieldsInConfiguration($renderables[$i]['renderables']);
+            }
+            if (isset($renderable['renderingOptions']['deleted']) && $renderable['renderingOptions']['deleted']) {
+                unset($renderables[$i]);
             }
         }
     }
