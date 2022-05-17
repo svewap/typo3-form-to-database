@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpFullyQualifiedNameUsageInspection */
 /**
  * This file is part of the "form_to_database" Extension for TYPO3 CMS.
  *
@@ -6,18 +6,15 @@
  * LICENSE file that was distributed with this source code.
  */
 
-use Lavitto\FormToDatabase\Controller\FormResultsController;
-use TYPO3\CMS\Extbase\Utility\ExtensionUtility;
-
 defined('TYPO3_MODE') or die();
 
-ExtensionUtility::registerModule(
+\TYPO3\CMS\Extbase\Utility\ExtensionUtility::registerModule(
     'FormToDatabase',
     'web',
     'formresults',
     'after:FormFormbuilder',
     [
-        FormResultsController::class => 'index, show, downloadCsv, deleteFormResult, updateItemListSelect, unDeleteFormDefinition',
+        \Lavitto\FormToDatabase\Controller\FormResultsController::class => 'index, show, downloadCsv, deleteFormResult, updateItemListSelect, unDeleteFormDefinition',
     ],
     [
         'access' => 'user,group',
