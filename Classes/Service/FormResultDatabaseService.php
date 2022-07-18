@@ -44,7 +44,7 @@ class FormResultDatabaseService
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('sys_refindex');
         return $queryBuilder
             ->select('form_persistence_identifier as identifier')
-            ->addSelectLiteral('COUNT(' . $queryBuilder->quoteIdentifier('form_persistence_identifier') . ') as numberOfResults')
+            ->addSelectLiteral('COUNT(' . $queryBuilder->quoteIdentifier('form_persistence_identifier') . ') as "numberOfResults"')
             ->from('tx_formtodatabase_domain_model_formresult')
             ->groupBy('form_persistence_identifier')
             ->execute()
