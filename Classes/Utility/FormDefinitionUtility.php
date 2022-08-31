@@ -79,7 +79,7 @@ class FormDefinitionUtility
      */
     protected function getFieldsFromFormDefinition($formDefinition, array $fields = []): array
     {
-        $renderables = is_object($formDefinition) ? $formDefinition->getRenderablesRecursively() : $formDefinition['renderables'];
+        $renderables = is_object($formDefinition) ? $formDefinition->getRenderablesRecursively() : ($formDefinition['renderables'] ?? []);
         if (is_object($formDefinition)) {
             foreach ($renderables as $renderable) {
                 if (get_class($renderable) === 'TYPO3\CMS\Form\Domain\Model\FormElements\Page') {
@@ -94,9 +94,9 @@ class FormDefinitionUtility
             }
         } else {
             foreach ($renderables as $renderable) {
-                if (isset($renderable['renderables'])) {
+                if (!empty($renderable['renderables'])) {
                     $fields = $this->getFieldsFromFormDefinition($renderable, $fields);
-                } elseif (isset($renderable['identifier'])) {
+                } elseif (!empty($renderable['identifier'])) {
                     $fields[$renderable['identifier']] = $this->filterFieldAttributes($renderable);
                 }
             }
@@ -128,7 +128,7 @@ class FormDefinitionUtility
 
         $fieldCount = 0;
         foreach ($formDefinition['renderables'] as &$steps) {
-            if (!$steps['renderables']) {
+            if (empty($steps['renderables'])) {
                 continue;
             }
             foreach ($steps['renderables'] as &$field) {
@@ -163,7 +163,9 @@ class FormDefinitionUtility
     protected function makeNextIdentifiersMap($fieldState): void
     {
         foreach ($fieldState as $identifier => &$field) {
-            [$identifierText, $identifierNumber] = explode('-', $field['identifier']);
+            $identifierParts = explode('-', $field['identifier']);
+            $identifierText = $identifierParts[0];
+            $identifierNumber = $identifierParts[1] ?? '0';
 
             if (!isset($this->fieldTypesNextIdentifier[$field['type']])) {
                 $this->fieldTypesNextIdentifier[$field['type']] = [
