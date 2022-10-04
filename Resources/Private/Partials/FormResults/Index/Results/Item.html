@@ -25,9 +25,16 @@
 	</td>
 	<td>
 		<f:if condition="{form.maxCrDate}">
-			<span class="{f:if(condition:form.newDataExists, then:'time-since-last-update')}">
-				<f:format.date format="%d. %b %Y %H:%M">@{form.maxCrDate}</f:format.date>
-			</span>
+			<f:if condition="{form.newDataExists}">
+				<f:then>
+					<span class="badge help-teaser" title="{f:translate(key: 'LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:index.new_entries')}">
+						<f:format.date format="%d. %b %Y %H:%M">@{form.maxCrDate}</f:format.date>
+					</span>
+				</f:then>
+				<f:else>
+					<f:format.date format="%d. %b %Y %H:%M">@{form.maxCrDate}</f:format.date>
+				</f:else>
+			</f:if>
 		</f:if>
 	</td>
 	<td class="col-control nowrap">

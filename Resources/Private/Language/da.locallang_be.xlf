@@ -23,6 +23,10 @@
                 <source>Latest data</source>
                 <target>Seneste data</target>
             </trans-unit>
+            <trans-unit id="index.new_entries" xml:space="preserve">
+                <source>New entries since last viewed</source>
+                <target>Nye tilføjelser siden sidste visning</target>
+            </trans-unit>
             <trans-unit id="show.results_for" xml:space="preserve">
                 <source>Results of form "%s"</source>
                 <target>Resultater fra formularen "%s"</target>

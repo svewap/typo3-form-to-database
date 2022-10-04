@@ -18,6 +18,9 @@
             <trans-unit id="index.latest" xml:space="preserve">
                 <source>Latest data</source>
             </trans-unit>
+            <trans-unit id="index.new_entries" xml:space="preserve">
+                <source>New entries since last viewed</source>
+            </trans-unit>
             <trans-unit id="show.results_for" xml:space="preserve">
                 <source>Results of form "%s"</source>
             </trans-unit>
