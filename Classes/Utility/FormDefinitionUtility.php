@@ -94,9 +94,9 @@ class FormDefinitionUtility
             }
         } else {
             foreach ($renderables as $renderable) {
-                if ($renderable['renderables']) {
+                if (isset($renderable['renderables'])) {
                     $fields = $this->getFieldsFromFormDefinition($renderable, $fields);
-                } elseif ($renderable['identifier']) {
+                } elseif (isset($renderable['identifier'])) {
                     $fields[$renderable['identifier']] = $this->filterFieldAttributes($renderable);
                 }
             }
