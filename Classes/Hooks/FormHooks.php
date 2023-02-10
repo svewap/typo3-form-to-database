@@ -65,7 +65,7 @@ class FormHooks
      */
     public function initializeFormResultRepository(): void
     {
-        $this->formResultRepository = GeneralUtility::makeInstance(FormResultRepository::class);
+        $this->formResultRepository = $this->objectManager->get(FormResultRepository::class);
     }
 
     /**
@@ -79,11 +79,11 @@ class FormHooks
         $this->formPersistenceManager->injectResourceFactory(GeneralUtility::makeInstance(ResourceFactory::class));
 
         /** @var StorageRepository $storageRepository */
-        $storageRepository = GeneralUtility::makeInstance(StorageRepository::class);
+        $storageRepository = $this->objectManager->get(StorageRepository::class);
         $this->formPersistenceManager->injectStorageRepository($storageRepository);
 
         /** @var YamlSource $yamlSource */
-        $yamlSource = GeneralUtility::makeInstance(YamlSource::class);
+        $yamlSource = $this->objectManager->get(YamlSource::class);
         $this->formPersistenceManager->injectYamlSource($yamlSource);
     }
 
@@ -98,6 +98,7 @@ class FormHooks
      */
     public function beforeFormDelete($formPersistenceIdentifier): void
     {
+        $this->objectManager = GeneralUtility::makeInstance(ObjectManager::class);
         $this->initializeFormResultRepository();
         $this->initializeFormPersistenceManager();
         $yaml = $this->formPersistenceManager->load($formPersistenceIdentifier);

@@ -17,17 +17,14 @@ TYPO3:
                     1560425499:
                       identifier: 'FormToDatabase'
                       editors:
+                        __inheritances:
+                          10: 'TYPO3.CMS.Form.mixins.formElementMixins.BaseCollectionEditorsMixin'
                         100:
-                          identifier: header
-                          templateName: Inspector-CollectionElementHeaderEditor
-                          label: formEditor.elements.Form.finisher.SaveToDatabase.editor.header.label
-                        9999:
-                          identifier: removeButton
-                          templateName: Inspector-RemoveElementEditor
+                          label: 'formEditor.elements.Form.finisher.SaveToDatabase.editor.header.label'
           finishersDefinition:
             FormToDatabase:
               formEditor:
-                iconIdentifier: form-finisher
-                label: formEditor.elements.Form.finisher.SaveToDatabase.editor.header.label
+                iconIdentifier: 't3-form-icon-finisher'
+                label: 'formEditor.elements.Form.finisher.SaveToDatabase.editor.header.label'
                 predefinedDefaults:
                   options: []

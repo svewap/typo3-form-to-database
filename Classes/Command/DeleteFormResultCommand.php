@@ -17,6 +17,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Object\Exception;
+use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException;
 use TYPO3\CMS\Extbase\Persistence\Exception\InvalidQueryException;
 use TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager;
@@ -28,6 +29,12 @@ use TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager;
  */
 class DeleteFormResultCommand extends Command
 {
+
+    /**
+     * @var ObjectManager
+     */
+    protected $objectManager;
+
     /**
      * @var FormResultRepository
      */
@@ -47,8 +54,9 @@ class DeleteFormResultCommand extends Command
      */
     public function initialize(InputInterface $input, OutputInterface $output): void
     {
-        $this->formResultRepository = GeneralUtility::makeInstance(FormResultRepository::class);
-        $this->persistenceManager = GeneralUtility::makeInstance(PersistenceManager::class);
+        $this->objectManager = GeneralUtility::makeInstance(ObjectManager::class);
+        $this->formResultRepository = $this->objectManager->get(FormResultRepository::class);
+        $this->persistenceManager = $this->objectManager->get(PersistenceManager::class);
     }
 
     /**

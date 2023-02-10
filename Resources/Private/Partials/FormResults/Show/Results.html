@@ -2,59 +2,61 @@
 	  xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
 	  data-namespace-typo3-fluid="true">
 
-<div class="panel panel-space panel-default recordlist">
-	<div class="panel-heading">
+<f:be.widget.paginate as="paginatedFormResults" objects="{formResults}"
+					  configuration="{itemsPerPage: 50, insertAbove: 0, insertBelow: 1}">
+	<div class="panel panel-space panel-default recordlist">
+		<div class="panel-heading">
 		<span>
 			<f:translate
 					key="LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.results_for"
 					arguments="{0: formDefinition.label}"/>
 			({f:count(subject: formResults)})
 		</span>
-	</div>
-	<div class="panel-collapse">
-		<div class="table-fit">
-			<table id="forms" class="table table-striped table-hover">
-				<thead>
-				<tr>
-					<f:if condition="{newDataExists}">
+		</div>
+		<div class="collapse in">
+			<div class="table-fit">
+				<table id="forms" class="table table-striped table-hover">
+					<thead>
+					<tr>
+						<f:if condition="{newDataExists}">
+							<th>
+								<f:translate
+										key="LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.new"/>
+							</th>
+						</f:if>
 						<th>
 							<f:translate
-									key="LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.new"/>
+									key="LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.crdate"/>
 						</th>
-					</f:if>
-					<th>
-						<f:translate
-								key="LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.crdate"/>
-					</th>
-					<f:for each="{formRenderables}" as="renderable">
-						<f:if condition="{renderable.renderingOptions.listView}">
-							<th>{renderable.label}</th>
-						</f:if>
-					</f:for>
-					<th class="col-control nowrap">
-						<div class="btn-group" role="group">
-							<a href="#" class="btn btn-sm btn-default" data-bs-toggle="modal"
-							   data-bs-target="#itemListSelect">
+						<f:for each="{formRenderables}" as="renderable">
+							<f:if condition="{renderable.renderingOptions.listView}">
+								<th>{renderable.label}</th>
+							</f:if>
+						</f:for>
+						<th class="col-control nowrap">
+							<div class="btn-group" role="group">
+								<a href="#" class="btn btn-sm btn-default" data-toggle="modal"
+											   data-target="#itemListSelect">
 								<core:icon identifier="actions-cog" size="small"/> <f:translate
-									key="LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.buttons.column_settings"/>
-							</a>
-						</div>
-					</th>
-				</tr>
-				</thead>
-				<tbody>
-				<f:for each="{paginator.paginatedItems}" as="formResult" iteration="iterator">
-					<f:render partial="FormResults/Show/Results/Item" arguments="{_all}"/>
-				</f:for>
-				</tbody>
-			</table>
+										key="LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.buttons.column_settings"/>
+								</a>
+							</div>
+						</th>
+					</tr>
+					</thead>
+					<tbody>
+					<f:for each="{paginatedFormResults}" as="formResult" iteration="iterator">
+						<f:render partial="FormResults/Show/Results/Item" arguments="{_all}"/>
+					</f:for>
+					</tbody>
+				</table>
+			</div>
 		</div>
 	</div>
-</div>
-<f:for each="{paginator.paginatedItems}" as="formResult">
-	<f:render partial="FormResults/Show/Results/ItemDetail" arguments="{_all}"/>
-</f:for>
-
-<f:render partial="FormResults/Show/ItemListSelect" arguments="{_all}"/>
+	<f:for each="{paginatedFormResults}" as="formResult">
+		<f:render partial="FormResults/Show/Results/ItemDetail" arguments="{_all}"/>
+	</f:for>
+	<f:render partial="FormResults/Show/ItemListSelect" arguments="{_all}"/>
+</f:be.widget.paginate>
 
 </html>
