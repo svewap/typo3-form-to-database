@@ -15,7 +15,6 @@
 
 ### Features
 
-- Very simple installation
 - No configuration needed
 - No database-changes per form required
 - Shows all results per form in a separate backend module
@@ -38,8 +37,8 @@
 
 ### Installation using Composer
 
-The recommended way to install the extension is by using [Composer](https://getcomposer.org/). In your Composer based 
-TYPO3 project root, just do `composer req lavitto/typo3-form-to-database`.
+The recommended way to install the extension is by using [Composer](https://getcomposer.org/). In your Composer based
+TYPO3 project root run `composer req lavitto/typo3-form-to-database`.
 
 ### Installation from TYPO3 Extension Repository (TER)
 
@@ -47,17 +46,9 @@ Download and install the extension `form_to_database` with the extension manager
 
 ## 3. Minimal setup
 
-No setup required.
+Add the finisher ("Save the mail to the Database") to your forms to start storing data.
 
-## 4. Administration
-
-### Simple add the finisher to your form
-
-1) Create a new or edit an existing form
-2) Add the finisher "Save the mail to the Database"
-3) Save the form
-
-## 5. Command / Scheduler
+## 4. Command / Scheduler
 
 It's possible to delete the form results by the command line or scheduler (Execute console commands).
 
@@ -69,18 +60,14 @@ Arguments:
   maxAge                Maximum age of form results in days [default: 90]
 ```
 
-## 6. Configuration
-
-No configuration required.
-
-## 7. Contribute
+## 5. Contribute
 
 Please create an issue at https://gitlab.com/lavitto/typo3-form-to-database/issues.
 
 **Please use GitLab only for bug-reporting or feature-requests. For support use the TYPO3 community channels or contact us by email.**
 
-## 8. Support
+## 6. Support
 
-If you need private or personal support, contact us by email on [info@lavitto.ch](mailto:info@lavitto.ch). 
+If you need private or personal support, try the TYPO3 Slack channel - [#ext-form-to-database](https://app.slack.com/client/T024TUMLZ/C02HWBCUF0F) or contact us by email on [info@lavitto.ch](mailto:info@lavitto.ch).
 
 **Be aware that this support might not be free!**
