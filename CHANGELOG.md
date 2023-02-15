@@ -7,6 +7,7 @@
 - [TASK] Set PHP to 7.4 as a minimum
 - [TASK] Save repeatable fields to database (#59)
 - [TASK] Improved marking when new entries (!36)
+- [TASK] Set CSV to be comma seperated by default (#83)
 - [BUGFIX] added quotation marks around identifier numberOfResults because PostgreSQL changes unquoted identifiers to lowercase
 - [BUGFIX] Fix undefined index (!30)
 - [BUGFIX] Fix undefined array key issues with php 8
