@@ -1,6 +1,6 @@
-# Upcoming
+# 2.2.0
 
-⚠️ This release is a regression as it drops support for TYPO3 v11. More details in [!37](https://gitlab.com/lavitto/typo3-form-to-database/-/merge_requests/37)
+⚠️ This release fixes a regression to re-enable the correct TYPO3 support. More details in [!37](https://gitlab.com/lavitto/typo3-form-to-database/-/merge_requests/37)
 
 - [BREAKING] Drop TYPO3 11.5 support
 - [BREAKING] Drop TYPO3 8.7 support

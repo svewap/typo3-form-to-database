@@ -11,6 +11,11 @@
 - **TYPO3 Extension Repository**: [extensions.typo3.org/extension/form_to_database](https://extensions.typo3.org/extension/form_to_database)
 - **Found an issue?**: [gitlab.com/lavitto/typo3-form-to-database/issues](https://gitlab.com/lavitto/typo3-form-to-database/issues)
 
+## Note
+
+Version 2.* (from 2.2.0) will support TYPO3 V9 and V10 **only**. Version 11 support can be found on 3.x.x.
+
+
 ## 1. Introduction
 
 ### Features
