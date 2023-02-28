@@ -27,7 +27,7 @@
 		<f:if condition="{form.maxCrDate}">
 			<f:if condition="{form.newDataExists}">
 				<f:then>
-					<span class="badge help-teaser" title="{f:translate(key: 'LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:index.new_entries')}">
+					<span class="badge badge-info help-teaser" title="{f:translate(key: 'LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:index.new_entries')}">
 						<f:format.date format="%d. %b %Y %H:%M">@{form.maxCrDate}</f:format.date>
 					</span>
 				</f:then>
