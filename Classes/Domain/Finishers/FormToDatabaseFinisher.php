@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of the "form_to_database" Extension for TYPO3 CMS.
  *
@@ -31,6 +32,13 @@ class FormToDatabaseFinisher extends AbstractFinisher
      * Dont save this fields in database (also used in FromResultsController)
      */
     public const EXCLUDE_FIELDS = ['Honeypot', 'StaticText', 'ContentElement', 'GridRow', 'SummaryPage'];
+
+    /**
+     * The formDefinition
+     *
+     * @var FormDefinition
+     */
+    protected $formDefinition;
 
     /**
      * The FormResultRepository
@@ -82,7 +90,10 @@ class FormToDatabaseFinisher extends AbstractFinisher
         foreach ($fields as $fieldName => $fieldValue) {
             $newNestedIdentifier = $nestedIdentifier;
 
-            if(is_array($fieldValue)) {
+            // Are we a valid field or a repeatable container?
+            $isValidField = !is_null($this->formDefinition->getElementByIdentifier($fieldName));
+
+            if (is_array($fieldValue) && !$isValidField) {
                 $newNestedIdentifier[] = $fieldName;
                 $formValues = array_merge($this->getFormFieldValues($fieldValue, $newNestedIdentifier), $formValues);
             } else {
@@ -91,10 +102,17 @@ class FormToDatabaseFinisher extends AbstractFinisher
                     $fieldName = implode('.', $fieldNameIdentifier);
                 }
 
+                // Get the field with the new constructed name
                 $fieldElement = $this->formDefinition->getElementByIdentifier($fieldName);
 
-                if ($fieldElement instanceof FormElementInterface && in_array($fieldElement->getType(),
-                        self::EXCLUDE_FIELDS, true) === false) {
+                if (
+                    $fieldElement instanceof FormElementInterface &&
+                    in_array(
+                        $fieldElement->getType(),
+                        self::EXCLUDE_FIELDS,
+                        true
+                    ) === false
+                ) {
                     if ($fieldValue instanceof FileReference) {
                         $formValues[$fieldName] = $fieldValue->getOriginalResource()->getCombinedIdentifier();
                     } else {
