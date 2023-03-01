@@ -1,5 +1,4 @@
-<?php /** @noinspection PhpUnusedParameterInspection */
-/** @noinspection PhpInternalEntityUsedInspection */
+<?php
 
 /**
  * This file is part of the "form_to_database" Extension for TYPO3 CMS.
@@ -15,28 +14,29 @@ use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
 use Lavitto\FormToDatabase\Utility\FormDefinitionUtility;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
-use TYPO3\CMS\Core\Resource\StorageRepository;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException;
 use TYPO3\CMS\Extbase\Persistence\Exception\UnknownObjectException;
 use TYPO3\CMS\Extbase\Persistence\Generic\QueryResult;
-use TYPO3\CMS\Form\Mvc\Configuration\YamlSource;
 use TYPO3\CMS\Form\Mvc\Persistence\FormPersistenceManager;
 use TYPO3\CMS\Form\Mvc\Persistence\FormPersistenceManagerInterface;
 
 /**
  * Class FormHooks
  *
+ * todo: split hooks into separate files and load only necessary dependencies
  * @package Lavitto\FormToDatabase\Hooks
  */
 class FormHooks
 {
+    /**
+     * @var FormDefinitionUtility
+     */
+    public $formDefinitionUtility;
 
     /**
-     * @var array
+     * @var ResourceFactory
      */
-    protected $fieldTypesNextIdentifier = [];
+    protected $resourceFactory;
 
     /**
      * @var FormPersistenceManager
@@ -44,47 +44,20 @@ class FormHooks
     protected $formPersistenceManager;
 
     /**
-     * @var int $enableListViewUntilCount
-     */
-    protected $enableListViewUntilCount = 4;
-
-    /**
-     * @var ObjectManager
-     */
-    protected $objectManager;
-
-    /**
-     * The FormResultRepository
-     *
      * @var FormResultRepository
      */
     public $formResultRepository;
 
-    /**
-     * Injects the FormResultRepository
-     */
-    public function initializeFormResultRepository(): void
-    {
-        $this->formResultRepository = GeneralUtility::makeInstance(FormResultRepository::class);
-    }
-
-    /**
-     * Injects necessary objects into the formPersistenceManager
-     */
-    protected function initializeFormPersistenceManager(): void
-    {
-        /** @var FormPersistenceManagerInterface $formPersistenceManager */
-        $this->formPersistenceManager = GeneralUtility::makeInstance(FormPersistenceManager::class);
-        $this->formPersistenceManager->initializeObject();
-        $this->formPersistenceManager->injectResourceFactory(GeneralUtility::makeInstance(ResourceFactory::class));
-
-        /** @var StorageRepository $storageRepository */
-        $storageRepository = GeneralUtility::makeInstance(StorageRepository::class);
-        $this->formPersistenceManager->injectStorageRepository($storageRepository);
-
-        /** @var YamlSource $yamlSource */
-        $yamlSource = GeneralUtility::makeInstance(YamlSource::class);
-        $this->formPersistenceManager->injectYamlSource($yamlSource);
+    public function __construct(
+        FormDefinitionUtility $formDefinitionUtility,
+        FormPersistenceManagerInterface $formPersistenceManager,
+        FormResultRepository $formResultRepository,
+        ResourceFactory $resourceFactory
+    ) {
+        $this->formDefinitionUtility = $formDefinitionUtility;
+        $this->formPersistenceManager = $formPersistenceManager;
+        $this->formResultRepository = $formResultRepository;
+        $this->resourceFactory = $resourceFactory;
     }
 
     /**
@@ -94,16 +67,13 @@ class FormHooks
      * @throws \TYPO3\CMS\Extbase\Persistence\Exception\InvalidQueryException
      * @throws \TYPO3\CMS\Form\Mvc\Persistence\Exception\PersistenceManagerException
      * @noinspection PhpParamsInspection
-     * @noinspection PhpUndefinedMethodInspection
      */
     public function beforeFormDelete($formPersistenceIdentifier): void
     {
-        $this->initializeFormResultRepository();
-        $this->initializeFormPersistenceManager();
         $yaml = $this->formPersistenceManager->load($formPersistenceIdentifier);
 
         /** @var File $file */
-        $file = ResourceFactory::getInstance()->getFileObjectFromCombinedIdentifier($formPersistenceIdentifier);
+        $file = $this->resourceFactory->getFileObjectFromCombinedIdentifier($formPersistenceIdentifier);
 
         //Generate new identifier
         $oldIdentifier = $yaml['identifier'];
@@ -140,8 +110,6 @@ class FormHooks
      */
     public function beforeFormSave($formPersistenceIdentifier, $formDefinition)
     {
-        /** @var FormDefinitionUtility $formDefinitionUtility */
-        $formDefinitionUtility = GeneralUtility::makeInstance(FormDefinitionUtility::class);
-        return $formDefinitionUtility->updateFormDefinition($formDefinition);
+        return $this->formDefinitionUtility->updateFormDefinition($formDefinition);
     }
 }

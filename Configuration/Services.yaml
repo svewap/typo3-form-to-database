@@ -6,6 +6,8 @@ services:
 
   Lavitto\FormToDatabase\:
     resource: '../Classes/*'
+  Lavitto\FormToDatabase\Hooks\FormHooks:
+    public: true
   Lavitto\FormToDatabase\Command\DeleteFormResultCommand:
     tags:
       - name: 'console.command'
