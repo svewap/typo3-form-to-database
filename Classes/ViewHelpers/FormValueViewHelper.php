@@ -46,7 +46,7 @@ class FormValueViewHelper extends AbstractViewHelper
      */
     public function render(): string
     {
-        return FormValueUtility::convertFormValue($this->arguments['element'], $this->arguments['results'][$this->arguments['value']],
+        return FormValueUtility::convertFormValue($this->arguments['element'], $this->arguments['results'][$this->arguments['value']] ?? '',
             FormValueUtility::OUTPUT_TYPE_HTML, $this->arguments['crop'] === true);
     }
 }
