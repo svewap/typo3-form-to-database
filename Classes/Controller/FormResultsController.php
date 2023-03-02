@@ -399,7 +399,7 @@ class FormResultsController extends FormManagerController
         $fieldSelectedState = $this->request->getArgument('field');
         if (isset($formDefinition['renderingOptions']['fieldState'])) {
             foreach ($formDefinition['renderingOptions']['fieldState'] as $fieldKey => &$fieldData) {
-                $fieldData['renderingOptions']['listView'] = $fieldSelectedState[$fieldKey] ? 1 : 0;
+                $fieldData['renderingOptions']['listView'] = ($fieldSelectedState[$fieldKey] ?? false) ? 1 : 0;
             }
             unset($fieldData);
         }
