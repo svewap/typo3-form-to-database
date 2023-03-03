@@ -17,6 +17,9 @@ use Exception;
 use Lavitto\FormToDatabase\Domain\Finishers\FormToDatabaseFinisher;
 use Lavitto\FormToDatabase\Domain\Model\FormResult;
 use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
+use Lavitto\FormToDatabase\Event\FormResultDeleteFormResultActionEvent;
+use Lavitto\FormToDatabase\Event\FormResultDownloadCSVActionEvent;
+use Lavitto\FormToDatabase\Event\FormResultShowActionEvent;
 use Lavitto\FormToDatabase\Helpers\MiscHelper;
 use Lavitto\FormToDatabase\Service\FormResultDatabaseService;
 use Lavitto\FormToDatabase\Utility\ExtConfUtility;
@@ -44,9 +47,6 @@ use TYPO3\CMS\Extbase\Mvc\Exception\StopActionException;
 use TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException;
 use TYPO3\CMS\Extbase\Persistence\Exception\InvalidQueryException;
 use TYPO3\CMS\Extbase\Persistence\Exception\UnknownObjectException;
-use TYPO3\CMS\Extbase\SignalSlot\Dispatcher;
-use TYPO3\CMS\Extbase\SignalSlot\Exception\InvalidSlotException;
-use TYPO3\CMS\Extbase\SignalSlot\Exception\InvalidSlotReturnException;
 use TYPO3\CMS\Form\Controller\FormManagerController;
 use TYPO3\CMS\Form\Domain\Exception\RenderingException;
 use TYPO3\CMS\Form\Domain\Factory\ArrayFormFactory;
@@ -61,22 +61,6 @@ use TYPO3\CMS\Form\Slot\FilePersistenceSlot;
  */
 class FormResultsController extends FormManagerController
 {
-
-    /**
-     *
-     */
-    public const SIGNAL_FORMSRESULT_SHOW_ACTION = 'showAction';
-    /**
-     *
-     */
-    public const SIGNAL_FORMSRESULT_DOWNLOAD_CSV_ACTION = 'downloadCsvAction';
-
-
-    /**
-     *
-     */
-    public const SIGNAL_FORMSRESULT_DELETE_FORM_RESULT_ACTION = 'deleteFormResultAction';
-
     /**
      * CSV Linebreak
      */
@@ -160,17 +144,6 @@ class FormResultsController extends FormManagerController
             'stylesheet',
             'print'
         );
-    }
-
-    /**
-     * Inject SignalSlotDispatcher
-     *
-     * @param Dispatcher $signalSlotDispatcher
-     * @noinspection SenselessMethodDuplicationInspection
-     */
-    public function injectSignalSlotDispatcher(Dispatcher $signalSlotDispatcher): void
-    {
-        $this->signalSlotDispatcher = $signalSlotDispatcher;
     }
 
     /**
@@ -273,12 +246,16 @@ class FormResultsController extends FormManagerController
                 }
             }
         }
-        $this->emitSignal(self::SIGNAL_FORMSRESULT_SHOW_ACTION, [
-            'formPersistenceIdentifier' => $formPersistenceIdentifier,
-            'formResults' => $formResults,
-            'formDefinition' => $formDefinition,
-            '$formRenderables' => $formRenderables
-        ]);
+
+        /** @var FormResultShowActionEvent $event */
+        $this->eventDispatcher->dispatch(
+            new FormResultShowActionEvent(
+                $formPersistenceIdentifier,
+                $formResults,
+                $formDefinition,
+                $formRenderables
+            )
+        );
 
         $paginator = new ArrayPaginator($formResults->toArray(), $currentPage, 20);
         $pagination = new SimplePagination($paginator);
@@ -339,12 +316,15 @@ class FormResultsController extends FormManagerController
         $this->formResultRepository->remove($formResult);
         $formDefinition = $this->getFormDefinitionObject($formPersistenceIdentifier);
 
-        $this->emitSignal(self::SIGNAL_FORMSRESULT_DELETE_FORM_RESULT_ACTION, [
-            $formPersistenceIdentifier,
-            $formResult,
-            $formDefinition,
-            $this->getFormRenderables($formDefinition)
-        ]);
+        $this->eventDispatcher->dispatch(
+            new FormResultDeleteFormResultActionEvent(
+                $formPersistenceIdentifier,
+                $formResult,
+                $formDefinition,
+                $this->getFormRenderables($formDefinition)
+            )
+        );
+
         $this->redirect('show', null, null, ['formPersistenceIdentifier' => $formPersistenceIdentifier]);
     }
 
@@ -704,12 +684,14 @@ class FormResultsController extends FormManagerController
             }
         }
 
-        $this->emitSignal(self::SIGNAL_FORMSRESULT_DOWNLOAD_CSV_ACTION, [
-            $formPersistenceIdentifier,
-            $formResults,
-            $formDefinition,
-            $formRenderables
-        ]);
+        $this->eventDispatcher->dispatch(
+            new FormResultDownloadCSVActionEvent(
+                $formPersistenceIdentifier,
+                $formResults,
+                $formDefinition,
+                $formRenderables
+            )
+        );
 
         $header = [
             self::CSV_ENCLOSURE . $this->getLanguageService()->sL('LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.crdate') . self::CSV_ENCLOSURE
@@ -850,21 +832,6 @@ class FormResultsController extends FormManagerController
                 ->setDisplayName($this->getLanguageService()->sL('LLL:EXT:form/Resources/Private/Language/Database.xlf:module.shortcut_name'))
                 ->setGetVariables($getVars);
             $buttonBar->addButton($shortcutButton, ButtonBar::BUTTON_POSITION_RIGHT);
-        }
-    }
-
-    /**
-     * Emits signal
-     *
-     * @param string $signalName name of the signal slot
-     * @param array $signalArguments arguments for the signal slot
-     */
-    protected function emitSignal($signalName, array $signalArguments): void
-    {
-        try {
-            $this->signalSlotDispatcher->dispatch(self::class, $signalName, $signalArguments);
-        } catch (InvalidSlotException $exception) {
-        } catch (InvalidSlotReturnException $exception) {
         }
     }
 }
