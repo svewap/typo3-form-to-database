@@ -10,6 +10,7 @@
 namespace Lavitto\FormToDatabase\Utility;
 
 use TYPO3\CMS\Form\Domain\Model\FormDefinition;
+use TYPO3\CMS\Form\Domain\Model\FormElements\Page;
 
 /**
  * Class FormDefinitionUtility
@@ -41,49 +42,49 @@ class FormDefinitionUtility
         bool $enableAllInListView = false,
         bool $force = false
     ): void {
-        $fields = [];
+        $fieldState = [];
         if (is_object($formDefinition)) {
             if (isset($formDefinition->getRenderingOptions()['fieldState'])) {
-                $fields = $formDefinition->getRenderingOptions()['fieldState'];
+                $fieldState = $formDefinition->getRenderingOptions()['fieldState'] ?? [];
             }
         } elseif (isset($formDefinition['renderingOptions']['fieldState'])) {
-            $fields = $formDefinition['renderingOptions']['fieldState'];
+            $fieldState = $formDefinition['renderingOptions']['fieldState'] ?? [];
         }
 
         // If no state exists - create state from current fields
-        if (empty($fields) || $force === true) {
-            $fieldState = $this->getFieldsFromFormDefinition($formDefinition, $fields);
+        if (empty($fieldState) || $force === true) {
+            $newFieldState = $this->getFieldsFromFormDefinition($formDefinition, $fieldState);
             $fieldCount = 0;
             //Mark all fields in state as not deleted
-            $fieldState = array_map(function ($field) use (&$fieldCount, $enableAllInListView) {
+            $newFieldState = array_map(function ($field) use (&$fieldCount, $enableAllInListView) {
                 $fieldCount++;
                 $field['renderingOptions']['deleted'] = 0;
                 $field['renderingOptions']['listView'] = ($enableAllInListView || $fieldCount <= $this->enableListViewUntilCount) ? 1 : 0;
                 return $field;
-            }, $fieldState);
+            }, $newFieldState);
             if (is_object($formDefinition)) {
-                $formDefinition->setRenderingOption('fieldState', $fieldState);
+                $formDefinition->setRenderingOption('fieldState', $newFieldState);
             } else {
-                $formDefinition['renderingOptions']['fieldState'] = $fieldState;
+                $formDefinition['renderingOptions']['fieldState'] = $newFieldState;
             }
         }
     }
 
     /**
-     * @param FormDefinition|array $formDefinition
-     * @param array $fields
+     * @param array|FormDefinition $formDefinition
+     * @param array $fieldState
      * @return array
      */
-    protected function getFieldsFromFormDefinition($formDefinition, array $fields = []): array
+    protected function getFieldsFromFormDefinition($formDefinition, array $fieldState = []): array
     {
         $renderables = is_object($formDefinition) ? $formDefinition->getRenderablesRecursively() : ($formDefinition['renderables'] ?? []);
         if (is_object($formDefinition)) {
             foreach ($renderables as $renderable) {
-                if (get_class($renderable) === 'TYPO3\CMS\Form\Domain\Model\FormElements\Page') {
+                if (get_class($renderable) === Page::class) {
                     continue;
                 }
                 $identifier = $renderable->getIdentifier();
-                $fields[$identifier] = [
+                $fieldState[$identifier] = [
                     'identifier' => $identifier,
                     'label' => $renderable->getLabel(),
                     'type' => $renderable->getType()
@@ -92,13 +93,13 @@ class FormDefinitionUtility
         } else {
             foreach ($renderables as $renderable) {
                 if (!empty($renderable['renderables'])) {
-                    $fields = $this->getFieldsFromFormDefinition($renderable, $fields);
+                    $fieldState = $this->getFieldsFromFormDefinition($renderable, $fieldState);
                 } elseif (!empty($renderable['identifier'])) {
-                    $fields[$renderable['identifier']] = $this->filterFieldAttributes($renderable);
+                    $fieldState[$renderable['identifier']] = $this->filterFieldAttributes($renderable);
                 }
             }
         }
-        return $fields;
+        return $fieldState;
     }
 
     /**
