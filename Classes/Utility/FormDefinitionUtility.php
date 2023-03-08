@@ -86,19 +86,10 @@ class FormDefinitionUtility
                 $fieldState = $this->addFieldsToStateFromFormDefinition($renderable, $fieldState);
             } elseif (!empty($renderable['identifier'])) {
                 if(in_array($renderable['type'], self::nonInputRenderables)) continue;
-                ArrayUtility::mergeRecursiveWithOverrule($fieldState[$renderable['identifier']], $this->filterFieldAttributes($renderable));
+                $this->addFieldToState($fieldState[$renderable['identifier']], $renderable);
             }
         }
         return $fieldState;
-    }
-
-    /**
-     * @param $field
-     * @return array
-     */
-    protected function filterFieldAttributes($field): array
-    {
-        return array_intersect_key($field, array_flip(self::fieldAttributeFilterKeys));
     }
 
     /**
@@ -129,13 +120,10 @@ class FormDefinitionUtility
                         $formDefinition['renderingOptions']['fieldState'][$renderable['identifier']]['renderingOptions']['deleted'] === 1
                     ) {
                         $this->updateNewFieldIdentifier($renderable);
-                        $this->addFieldToState($formDefinition, $renderable);
                         $this->updateListViewState($formDefinition, $renderable, $fieldCount);
                         //Existing field - update state
-                    } else {
-                        $formDefinition['renderingOptions']['fieldState'][$renderable['identifier']] =
-                            array_merge($formDefinition['renderingOptions']['fieldState'][$renderable['identifier']], $this->filterFieldAttributes($renderable));
                     }
+                    $this->addFieldToState($formDefinition['renderingOptions']['fieldState'], $renderable);
                 }
             }
         };
@@ -203,12 +191,12 @@ class FormDefinitionUtility
 
     /**
      * @param $field
-     * @param $formDefinition
+     * @param $fieldState
      */
-    protected function addFieldToState(&$formDefinition, $field): void
+    protected function addFieldToState(&$fieldState, $field): void
     {
-        //  Tilføje ny til fieldState
-        $formDefinition['renderingOptions']['fieldState'][$field['identifier']] = $this->filterFieldAttributes($field);
+        $newFieldState = array_intersect_key($field, array_flip(self::fieldAttributeFilterKeys));
+        ArrayUtility::mergeRecursiveWithOverrule($fieldState, $newFieldState);
     }
 
     /**
