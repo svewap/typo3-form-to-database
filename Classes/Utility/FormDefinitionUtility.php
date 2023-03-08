@@ -119,7 +119,7 @@ class FormDefinitionUtility
                         ||
                         $formDefinition['renderingOptions']['fieldState'][$renderable['identifier']]['renderingOptions']['deleted'] === 1
                     ) {
-                        $this->updateNewFieldIdentifier($renderable);
+                        $this->updateNewFieldWithNextIdentifier($renderable);
                         $this->updateListViewState($formDefinition, $renderable, $fieldCount);
                         //Existing field - update state
                     }
@@ -169,24 +169,12 @@ class FormDefinitionUtility
     /**
      * @param $field
      */
-    protected function updateNewFieldIdentifier(&$field): void
+    protected function updateNewFieldWithNextIdentifier(&$field): void
     {
-        //  Opdatere identifier med $fieldTypesNextIdentifier
-        $field['identifier'] = $this->getNextIdentifier($field['type'], $field['identifier']);
-    }
-
-    /**
-     * @param $type
-     * @param $identifier
-     * @return string
-     */
-    protected function getNextIdentifier($type, $identifier): string
-    {
-        if (isset($this->fieldTypesNextIdentifier[$type])) {
-            $identifier = $this->fieldTypesNextIdentifier[$type]['text'] . '-' . $this->fieldTypesNextIdentifier[$type]['number'];
-            $this->fieldTypesNextIdentifier[$type]['number']++;
+        if (isset($this->fieldTypesNextIdentifier[$field['type']])) {
+            $this->fieldTypesNextIdentifier[$field['type']]['number']++;
+            $field['identifier'] = $this->fieldTypesNextIdentifier[$field['type']]['text'] . '-' . $this->fieldTypesNextIdentifier[$field['type']]['number'];
         }
-        return $identifier;
     }
 
     /**
