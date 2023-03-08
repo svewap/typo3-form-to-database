@@ -50,7 +50,7 @@ class FormDefinitionUtility
 
         // If no state exists - create state from current fields
         if (empty($fieldState) || $force === true) {
-            $newFieldState = $this->addFieldsToStateFromFormDefintion($formDefinition, $fieldState);
+            $newFieldState = $this->addFieldsToStateFromFormDefinition($formDefinition, $fieldState);
             $fieldCount = 0;
             //Mark all fields in state as not deleted
             $newFieldState = array_map(function ($field) use (&$fieldCount, $enableAllInListView) {
@@ -78,12 +78,12 @@ class FormDefinitionUtility
      * @param array $fieldState
      * @return array
      */
-    protected function addFieldsToStateFromFormDefintion(array $formDefinition, array $fieldState = []): array
+    protected function addFieldsToStateFromFormDefinition(array $formDefinition, array $fieldState = []): array
     {
         $renderables = $formDefinition['renderables'] ?? [];
         foreach ($renderables as $renderable) {
             if (!empty($renderable['renderables'])) {
-                $fieldState = $this->addFieldsToStateFromFormDefintion($renderable, $fieldState);
+                $fieldState = $this->addFieldsToStateFromFormDefinition($renderable, $fieldState);
             } elseif (!empty($renderable['identifier'])) {
                 if(in_array($renderable['type'], self::nonInputRenderables)) continue;
                 ArrayUtility::mergeRecursiveWithOverrule($fieldState[$renderable['identifier']], $this->filterFieldAttributes($renderable));
