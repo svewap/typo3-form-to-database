@@ -9,6 +9,7 @@
 
 namespace Lavitto\FormToDatabase\Utility;
 
+use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Form\Domain\Model\FormDefinition;
 use TYPO3\CMS\Form\Domain\Model\FormElements\Page;
 
@@ -32,6 +33,9 @@ class FormDefinitionUtility
 
     const fieldAttributeFilterKeys = ['identifier', 'label', 'type'];
 
+    const nonInputRenderables = ['Page', 'SummaryPage', 'GridRow', 'Fieldset', 'Section', 'Honeypot', 'StaticText', 'ContentElement'];
+
+
     /**
      * @param array|FormDefinition $formDefinition
      * @param bool $enableAllInListView
@@ -42,18 +46,11 @@ class FormDefinitionUtility
         bool $enableAllInListView = false,
         bool $force = false
     ): void {
-        $fieldState = [];
-        if (is_object($formDefinition)) {
-            if (isset($formDefinition->getRenderingOptions()['fieldState'])) {
-                $fieldState = $formDefinition->getRenderingOptions()['fieldState'] ?? [];
-            }
-        } elseif (isset($formDefinition['renderingOptions']['fieldState'])) {
-            $fieldState = $formDefinition['renderingOptions']['fieldState'] ?? [];
-        }
+        $fieldState = $formDefinition['renderingOptions']['fieldState'] ?? [];
 
         // If no state exists - create state from current fields
         if (empty($fieldState) || $force === true) {
-            $newFieldState = $this->getFieldsFromFormDefinition($formDefinition, $fieldState);
+            $newFieldState = $this->addFieldsToStateFromFormDefintion($formDefinition, $fieldState);
             $fieldCount = 0;
             //Mark all fields in state as not deleted
             $newFieldState = array_map(function ($field) use (&$fieldCount, $enableAllInListView) {
@@ -62,41 +59,25 @@ class FormDefinitionUtility
                 $field['renderingOptions']['listView'] = ($enableAllInListView || $fieldCount <= $this->enableListViewUntilCount) ? 1 : 0;
                 return $field;
             }, $newFieldState);
-            if (is_object($formDefinition)) {
-                $formDefinition->setRenderingOption('fieldState', $newFieldState);
-            } else {
-                $formDefinition['renderingOptions']['fieldState'] = $newFieldState;
-            }
+            $formDefinition['renderingOptions']['fieldState'] = $newFieldState;
         }
     }
 
     /**
-     * @param array|FormDefinition $formDefinition
+     * OVERWRITES FIELDSTATE
+     * @param array $formDefinition
      * @param array $fieldState
      * @return array
      */
-    protected function getFieldsFromFormDefinition($formDefinition, array $fieldState = []): array
+    protected function addFieldsToStateFromFormDefintion(array $formDefinition, array $fieldState = []): array
     {
-        $renderables = is_object($formDefinition) ? $formDefinition->getRenderablesRecursively() : ($formDefinition['renderables'] ?? []);
-        if (is_object($formDefinition)) {
-            foreach ($renderables as $renderable) {
-                if (get_class($renderable) === Page::class) {
-                    continue;
-                }
-                $identifier = $renderable->getIdentifier();
-                $fieldState[$identifier] = [
-                    'identifier' => $identifier,
-                    'label' => $renderable->getLabel(),
-                    'type' => $renderable->getType()
-                ];
-            }
-        } else {
-            foreach ($renderables as $renderable) {
-                if (!empty($renderable['renderables'])) {
-                    $fieldState = $this->getFieldsFromFormDefinition($renderable, $fieldState);
-                } elseif (!empty($renderable['identifier'])) {
-                    $fieldState[$renderable['identifier']] = $this->filterFieldAttributes($renderable);
-                }
+        $renderables = $formDefinition['renderables'] ?? [];
+        foreach ($renderables as $renderable) {
+            if (!empty($renderable['renderables'])) {
+                $fieldState = $this->addFieldsToStateFromFormDefintion($renderable, $fieldState);
+            } elseif (!empty($renderable['identifier'])) {
+                if(in_array($renderable['type'], self::nonInputRenderables)) continue;
+                ArrayUtility::mergeRecursiveWithOverrule($fieldState[$renderable['identifier']], $this->filterFieldAttributes($renderable));
             }
         }
         return $fieldState;
