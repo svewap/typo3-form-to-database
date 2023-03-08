@@ -488,22 +488,6 @@ class FormResultsController extends FormManagerController
     ): array {
         $configuration = $this->formPersistenceManager->load($formPersistenceIdentifier);
 
-        /**
-         * Fields in nested items (e.g. repeatable containers & fieldsets)
-         * have "deleted" set to 1.
-         *
-         * This sets it to 0 if it is nested in the renderables
-         */
-        foreach ($configuration['renderables'] as $pages) {
-            foreach ($pages['renderables'] as $renderable) {
-                foreach ($renderable['renderables'] ?? [] as $field) {
-                    if(isset($configuration['renderingOptions']['fieldState'][$field['identifier']])) {
-                        $configuration['renderingOptions']['fieldState'][$field['identifier']]['renderingOptions']['deleted'] = 0;
-                    }
-                }
-            }
-        }
-
         $this->hydrateRepeatableFields($configuration);
 
         if ($useFieldStateDataAsRenderables) {
