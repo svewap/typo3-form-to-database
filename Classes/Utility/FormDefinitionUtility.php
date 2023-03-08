@@ -101,37 +101,42 @@ class FormDefinitionUtility
      */
     public function updateFormDefinition($formDefinition)
     {
+        $fieldCount = 0;
+        // Identify new field
+        $recursiveRenderableUpdate = function (array &$renderable) use (&$fieldCount, &$formDefinition, &$recursiveRenderableUpdate) {
+            if (!empty($renderable['renderables'])) {
+                foreach ($renderable['renderables'] as &$renderable2) {
+                    $recursiveRenderableUpdate($renderable2);
+                }
+            } elseif (!empty($renderable['identifier'])) {
+                if(in_array($renderable['type'], self::nonInputRenderables)) {
+                    $formDefinition['renderingOptions']['fieldState'][$renderable['identifier']]['active'] = 1;
+                    $fieldCount++;
+                    // Identifier does not exist in state OR
+                    // Identifier exists as deleted in state
+                    if (
+                        !isset($formDefinition['renderingOptions']['fieldState'][$renderable['identifier']])
+                        ||
+                        $formDefinition['renderingOptions']['fieldState'][$renderable['identifier']]['renderingOptions']['deleted'] === 1
+                    ) {
+                        $this->updateNewFieldIdentifier($renderable);
+                        $this->addFieldToState($formDefinition, $renderable);
+                        $this->updateListViewState($formDefinition, $renderable, $fieldCount);
+                        //Existing field - update state
+                    } else {
+                        $formDefinition['renderingOptions']['fieldState'][$renderable['identifier']] =
+                            array_merge($formDefinition['renderingOptions']['fieldState'][$renderable['identifier']], $this->filterFieldAttributes($renderable));
+                    }
+                }
+            }
+        };
+
         $this->addFieldStateIfDoesNotExist($formDefinition, false, true);
         //Make map of next identifier for each field type
         $this->makeNextIdentifiersMap($formDefinition['renderingOptions']['fieldState']);
 
-        $fieldCount = 0;
-        foreach ($formDefinition['renderables'] as &$steps) {
-            if (empty($steps['renderables'])) {
-                continue;
-            }
-            foreach ($steps['renderables'] as &$field) {
-                $fieldCount++;
-                //New field - field identifier does not exist in state OR New field - but identifier exists(deleted field) in state
-                if (
-                    !isset($formDefinition['renderingOptions']['fieldState'][$field['identifier']])
-                    ||
-                    $formDefinition['renderingOptions']['fieldState'][$field['identifier']]['renderingOptions']['deleted'] === 1
-                ) {
-                    $this->updateNewFieldIdentifier($field);
-                    $this->addFieldToState($formDefinition, $field);
-                    $this->updateListViewState($formDefinition, $field, $fieldCount);
-                    //Existing field - update state
-                } else {
-                    $formDefinition['renderingOptions']['fieldState'][$field['identifier']] = array_merge($formDefinition['renderingOptions']['fieldState'][$field['identifier']],
-                        $this->filterFieldAttributes($field));
-                }
-                $formDefinition['renderingOptions']['fieldState'][$field['identifier']]['active'] = 1;
-            }
-        }
-        unset($steps, $field);
+        $recursiveRenderableUpdate($formDefinition);
 
-        //Mark all fields that are found in renderables as deleted in state
         $this->updateStateDeletedState($formDefinition);
         return $formDefinition;
     }
