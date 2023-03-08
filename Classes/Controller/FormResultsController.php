@@ -615,9 +615,6 @@ class FormResultsController extends FormManagerController
             } elseif (isset($renderable['renderables']) && !empty($renderable['renderables'])) {
                 $this->filterExcludedFormFieldsInConfiguration($renderables[$i]['renderables']);
             }
-            if (isset($renderable['renderingOptions']['deleted']) && $renderable['renderingOptions']['deleted']) {
-                unset($renderables[$i]);
-            }
         }
     }
 
