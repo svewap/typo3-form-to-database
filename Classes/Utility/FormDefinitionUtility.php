@@ -59,12 +59,21 @@ class FormDefinitionUtility
                 $field['renderingOptions']['listView'] = ($enableAllInListView || $fieldCount <= $this->enableListViewUntilCount) ? 1 : 0;
                 return $field;
             }, $newFieldState);
+            // Clean up fieldState - remove if non-input field or incomplete
+            $newFieldState = array_filter($newFieldState, function($field) {
+                return
+                    !in_array($field['type'], self::nonInputRenderables)
+                    &&
+                    count(
+                        array_intersect_key(array_flip(self::fieldAttributeFilterKeys,), $field)
+                    ) === count(self::fieldAttributeFilterKeys);
+            });
+
             $formDefinition['renderingOptions']['fieldState'] = $newFieldState;
         }
     }
 
     /**
-     * OVERWRITES FIELDSTATE
      * @param array $formDefinition
      * @param array $fieldState
      * @return array
