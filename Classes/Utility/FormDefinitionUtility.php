@@ -22,17 +22,14 @@ class FormDefinitionUtility
     /**
      * @var array
      */
-    protected $fieldTypesNextIdentifier = [];
+    protected array $fieldTypesNextIdentifier = [];
 
     /**
      * @var int $enableListViewUntilCount
      */
-    protected $enableListViewUntilCount = 4;
+    protected int $enableListViewUntilCount = 4;
 
-    /**
-     * @var array
-     */
-    protected $fieldAttributeFilterKeys = ['identifier', 'label', 'type'];
+    const fieldAttributeFilterKeys = ['identifier', 'label', 'type'];
 
     /**
      * @param array|FormDefinition $formDefinition
@@ -110,7 +107,7 @@ class FormDefinitionUtility
      */
     protected function filterFieldAttributes($field): array
     {
-        return array_intersect_key($field, array_flip($this->fieldAttributeFilterKeys));
+        return array_intersect_key($field, array_flip(self::fieldAttributeFilterKeys));
     }
 
     /**
