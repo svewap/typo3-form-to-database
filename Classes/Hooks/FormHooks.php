@@ -12,19 +12,13 @@ namespace Lavitto\FormToDatabase\Hooks;
 
 use Lavitto\FormToDatabase\Domain\Model\FormResult;
 use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
-use Lavitto\FormToDatabase\Utility\FormDefinitionUtility;
 use Lavitto\FormToDatabase\Utility\UniqueFieldHandler;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
-use TYPO3\CMS\Core\Resource\StorageRepository;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException;
 use TYPO3\CMS\Extbase\Persistence\Exception\UnknownObjectException;
 use TYPO3\CMS\Extbase\Persistence\Generic\QueryResult;
-use TYPO3\CMS\Form\Mvc\Configuration\YamlSource;
 use TYPO3\CMS\Form\Mvc\Persistence\FormPersistenceManager;
-use TYPO3\CMS\Form\Mvc\Persistence\FormPersistenceManagerInterface;
 
 /**
  * Class FormHooks
@@ -116,6 +110,6 @@ class FormHooks
      */
     public function beforeFormSave($formPersistenceIdentifier, $formDefinition)
     {
-        return $this->uniqueFieldHandler->updateFormDefinition($formDefinition);
+        return $this->uniqueFieldHandler->updateNewFields($formDefinition);
     }
 }

@@ -49,31 +49,34 @@ class UniqueFieldHandler
      * @param $formDefinition
      * @return mixed
      */
-    public function updateFormDefinition($formDefinition)
+    public function updateNewFields($formDefinition)
     {
         $fieldCount = 0;
-        // Identify new field
-        $recursiveRenderableUpdate = function (array &$renderable) use (&$fieldCount, &$formDefinition, &$recursiveRenderableUpdate) {
+
+        $recursiveRenderableUpdate = function (array &$renderables) use (&$fieldCount, &$formDefinition, &$recursiveRenderableUpdate) {
             if (!empty($renderable['renderables'])) {
-                foreach ($renderable['renderables'] as &$renderable2) {
-                    $recursiveRenderableUpdate($renderable2);
-                }
-            } elseif (!empty($renderable['identifier'])) {
-                if(!in_array($renderable['type'], FormDefinitionUtility::nonInputRenderables)) {
-                    $formDefinition['renderingOptions']['fieldState'][$renderable['identifier']]['active'] = 1;
-                    $fieldCount++;
-                    // Identifier does not exist in state OR
-                    // Identifier exists as deleted in state
-                    if (
-                        !isset($formDefinition['renderingOptions']['fieldState'][$renderable['identifier']])
-                        ||
-                        $formDefinition['renderingOptions']['fieldState'][$renderable['identifier']]['renderingOptions']['deleted'] === 1
-                    ) {
-                        $this->updateNewFieldWithNextIdentifier($renderable);
-                        $this->updateListViewState($formDefinition, $renderable, $fieldCount);
-                        //Existing field - update state
+                foreach ($renderables as &$renderable) {
+                    if($renderable['renderables']) {
+                        $recursiveRenderableUpdate($renderable['renderables']);
+                    } else {
+                        // This check assumes that it is possible, that composite element does not always have renderables. If this is not the case, this check could be removed
+                        if(!FormDefinitionUtility::isCompositeElement($renderable)) {
+                            $formDefinition['renderingOptions']['fieldState'][$renderable['identifier']]['active'] = 1;
+                            $fieldCount++;
+                            // Identifier does not exist in state OR
+                            // Identifier exists as deleted in state
+                            if (
+                                !isset($formDefinition['renderingOptions']['fieldState'][$renderable['identifier']])
+                                ||
+                                $formDefinition['renderingOptions']['fieldState'][$renderable['identifier']]['renderingOptions']['deleted'] === 1
+                            ) {
+                                $this->updateNewFieldWithNextIdentifier($renderable);
+                                $this->updateListViewState($formDefinition, $renderable, $fieldCount);
+                                //Existing field - update state
+                            }
+                            FormDefinitionUtility::addFieldToState($formDefinition['renderingOptions']['fieldState'], $renderable);
+                        }
                     }
-                    FormDefinitionUtility::addFieldToState($formDefinition['renderingOptions']['fieldState'], $renderable);
                 }
             }
         };
@@ -82,7 +85,7 @@ class UniqueFieldHandler
         //Make map of next identifier for each field type
         $this->makeNextIdentifiersMap($formDefinition['renderingOptions']['fieldState']);
 
-        $recursiveRenderableUpdate($formDefinition);
+        $recursiveRenderableUpdate($formDefinition['renderables']);
 
         $this->updateStateDeletedState($formDefinition);
         return $formDefinition;
