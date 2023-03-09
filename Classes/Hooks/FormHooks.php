@@ -13,6 +13,7 @@ namespace Lavitto\FormToDatabase\Hooks;
 use Lavitto\FormToDatabase\Domain\Model\FormResult;
 use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
 use Lavitto\FormToDatabase\Utility\FormDefinitionUtility;
+use Lavitto\FormToDatabase\Utility\UniqueFieldHandler;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Resource\StorageRepository;
@@ -34,61 +35,38 @@ class FormHooks
 {
 
     /**
-     * @var array
+     * @var UniqueFieldHandler
      */
-    protected $fieldTypesNextIdentifier = [];
+    protected UniqueFieldHandler $uniqueFieldHandler;
 
     /**
      * @var FormPersistenceManager
      */
-    protected $formPersistenceManager;
-
-    /**
-     * @var int $enableListViewUntilCount
-     */
-    protected $enableListViewUntilCount = 4;
-
-    /**
-     * @var ObjectManager
-     */
-    protected $objectManager;
+    protected FormPersistenceManager $formPersistenceManager;
 
     /**
      * The FormResultRepository
      *
      * @var FormResultRepository
      */
-    public $formResultRepository;
+    public FormResultRepository $formResultRepository;
 
     /**
-     * Injects the FormResultRepository
+     * @param UniqueFieldHandler $uniqueFieldHandler
+     * @param FormPersistenceManager $formPersistenceManager
+     * @param FormResultRepository $formResultRepository
      */
-    public function initializeFormResultRepository(): void
+    public function __construct(UniqueFieldHandler $uniqueFieldHandler, FormPersistenceManager $formPersistenceManager, FormResultRepository $formResultRepository)
     {
-        $this->formResultRepository = $this->objectManager->get(FormResultRepository::class);
+        $this->uniqueFieldHandler = $uniqueFieldHandler;
+        $this->formPersistenceManager = $formPersistenceManager;
+        $this->formResultRepository = $formResultRepository;
     }
 
-    /**
-     * Injects necessary objects into the formPersistenceManager
-     */
-    protected function initializeFormPersistenceManager(): void
-    {
-        /** @var FormPersistenceManagerInterface $formPersistenceManager */
-        $this->formPersistenceManager = GeneralUtility::makeInstance(FormPersistenceManager::class);
-        $this->formPersistenceManager->initializeObject();
-        $this->formPersistenceManager->injectResourceFactory(GeneralUtility::makeInstance(ResourceFactory::class));
-
-        /** @var StorageRepository $storageRepository */
-        $storageRepository = $this->objectManager->get(StorageRepository::class);
-        $this->formPersistenceManager->injectStorageRepository($storageRepository);
-
-        /** @var YamlSource $yamlSource */
-        $yamlSource = $this->objectManager->get(YamlSource::class);
-        $this->formPersistenceManager->injectYamlSource($yamlSource);
-    }
 
     /**
      * @param $formPersistenceIdentifier
+     * @return void
      * @throws IllegalObjectTypeException
      * @throws UnknownObjectException
      * @throws \TYPO3\CMS\Extbase\Persistence\Exception\InvalidQueryException
@@ -98,9 +76,6 @@ class FormHooks
      */
     public function beforeFormDelete($formPersistenceIdentifier): void
     {
-        $this->objectManager = GeneralUtility::makeInstance(ObjectManager::class);
-        $this->initializeFormResultRepository();
-        $this->initializeFormPersistenceManager();
         $yaml = $this->formPersistenceManager->load($formPersistenceIdentifier);
 
         /** @var File $file */
@@ -141,8 +116,6 @@ class FormHooks
      */
     public function beforeFormSave($formPersistenceIdentifier, $formDefinition)
     {
-        /** @var FormDefinitionUtility $formDefinitionUtility */
-        $formDefinitionUtility = GeneralUtility::makeInstance(FormDefinitionUtility::class);
-        return $formDefinitionUtility->updateFormDefinition($formDefinition);
+        return $this->uniqueFieldHandler->updateFormDefinition($formDefinition);
     }
 }
