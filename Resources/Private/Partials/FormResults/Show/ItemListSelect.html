@@ -45,18 +45,28 @@
 						</tr>
 						</thead>
 						<tbody>
-						<f:for each="{formRenderables}" as="renderable">
-							<tr>
-								<th>{renderable.label}</th>
-								<td>{renderable.type}</td>
-								<td>{renderable.identifier}</td>
-								<td>
-									<f:form.checkbox
-											checked="{f:if(condition:'{renderable.renderingOptions.listView}', then:'checked')}"
-											name="field[{renderable.identifier}]" value="1"></f:form.checkbox>
-								</td>
-							</tr>
-						</f:for>
+						<f:groupedFor groupBy="renderingOptions.deleted" groupKey="deleted" each="{formRenderables}" as="renderables">
+							<f:if condition="{deleted} == 1">
+								<tr>
+									<th colspan="4">
+										<f:translate
+												key="LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.itemListSelect.deleted_fields"/>
+									</th>
+								</tr>
+							</f:if>
+							<f:for each="{renderables}" as="renderable">
+								<tr>
+									<th>{renderable.label}</th>
+									<td>{renderable.type}</td>
+									<td>{renderable.identifier}</td>
+									<td>
+										<f:form.checkbox
+												checked="{f:if(condition:'{renderable.renderingOptions.listView}', then:'checked')}"
+												name="field[{renderable.identifier}]" value="1"></f:form.checkbox>
+									</td>
+								</tr>
+							</f:for>
+						</f:groupedFor>
 						</tbody>
 					</table>
 				</div>

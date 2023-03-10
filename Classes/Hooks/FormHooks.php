@@ -12,13 +12,13 @@ namespace Lavitto\FormToDatabase\Hooks;
 use Lavitto\FormToDatabase\Domain\Model\FormResult;
 use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
 use Lavitto\FormToDatabase\Utility\FormDefinitionUtility;
+use Lavitto\FormToDatabase\Utility\UniqueFieldHandler;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException;
 use TYPO3\CMS\Extbase\Persistence\Exception\UnknownObjectException;
 use TYPO3\CMS\Extbase\Persistence\Generic\QueryResult;
 use TYPO3\CMS\Form\Mvc\Persistence\FormPersistenceManager;
-use TYPO3\CMS\Form\Mvc\Persistence\FormPersistenceManagerInterface;
 
 /**
  * Class FormHooks
@@ -36,32 +36,44 @@ class FormHooks
     /**
      * @var ResourceFactory
      */
-    protected $resourceFactory;
+    protected ResourceFactory $resourceFactory;
+
+    /*
+     * @var UniqueFieldHandler
+     */
+    protected UniqueFieldHandler $uniqueFieldHandler;
 
     /**
      * @var FormPersistenceManager
      */
-    protected $formPersistenceManager;
+    protected FormPersistenceManager $formPersistenceManager;
 
     /**
+     * The FormResultRepository
      * @var FormResultRepository
      */
-    public $formResultRepository;
+    public FormResultRepository $formResultRepository;
 
-    public function __construct(
-        FormDefinitionUtility $formDefinitionUtility,
-        FormPersistenceManagerInterface $formPersistenceManager,
-        FormResultRepository $formResultRepository,
-        ResourceFactory $resourceFactory
-    ) {
+    /**
+     * @param FormDefinitionUtility $formDefinitionUtility
+     * @param ResourceFactory $resourceFactory
+     * @param UniqueFieldHandler $uniqueFieldHandler
+     * @param FormPersistenceManager $formPersistenceManager
+     * @param FormResultRepository $formResultRepository
+     */
+    public function __construct(FormDefinitionUtility $formDefinitionUtility, ResourceFactory $resourceFactory, UniqueFieldHandler $uniqueFieldHandler, FormPersistenceManager $formPersistenceManager, FormResultRepository $formResultRepository)
+    {
         $this->formDefinitionUtility = $formDefinitionUtility;
+        $this->resourceFactory = $resourceFactory;
+        $this->uniqueFieldHandler = $uniqueFieldHandler;
         $this->formPersistenceManager = $formPersistenceManager;
         $this->formResultRepository = $formResultRepository;
-        $this->resourceFactory = $resourceFactory;
     }
+
 
     /**
      * @param $formPersistenceIdentifier
+     * @return void
      * @throws IllegalObjectTypeException
      * @throws UnknownObjectException
      * @throws \TYPO3\CMS\Extbase\Persistence\Exception\InvalidQueryException
@@ -110,6 +122,6 @@ class FormHooks
      */
     public function beforeFormSave($formPersistenceIdentifier, $formDefinition)
     {
-        return $this->formDefinitionUtility->updateFormDefinition($formDefinition);
+        return $this->uniqueFieldHandler->updateNewFields($formPersistenceIdentifier, $formDefinition);
     }
 }

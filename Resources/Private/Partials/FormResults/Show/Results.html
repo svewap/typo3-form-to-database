@@ -28,15 +28,27 @@
 					</th>
 					<f:for each="{formRenderables}" as="renderable">
 						<f:if condition="{renderable.renderingOptions.listView}">
-							<th>{renderable.label}</th>
+							<f:if condition="{renderable.renderingOptions.deleted}">
+								<f:then>
+									<th class="text-decoration-line-through help-teaser"
+										title="{f:translate(key: 'LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.field_deleted')}">
+										{renderable.label}
+										<core:icon identifier="content-info"></core:icon>
+									</th>
+								</f:then>
+								<f:else>
+									<th>{renderable.label}</th>
+								</f:else>
+							</f:if>
 						</f:if>
 					</f:for>
 					<th class="col-control nowrap">
 						<div class="btn-group" role="group">
 							<a href="#" class="btn btn-sm btn-default" data-bs-toggle="modal"
 							   data-bs-target="#itemListSelect">
-								<core:icon identifier="actions-cog" size="small"/> <f:translate
-									key="LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.buttons.column_settings"/>
+								<core:icon identifier="actions-cog" size="small"/>
+								<f:translate
+										key="LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.buttons.column_settings"/>
 							</a>
 						</div>
 					</th>
