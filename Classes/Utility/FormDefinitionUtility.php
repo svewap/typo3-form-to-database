@@ -18,6 +18,7 @@ use TYPO3\CMS\Form\Domain\Exception\TypeDefinitionNotValidException;
 use TYPO3\CMS\Form\Domain\Factory\ArrayFormFactory;
 use TYPO3\CMS\Form\Domain\Model\FormDefinition;
 use TYPO3\CMS\Form\Domain\Model\FormElements\Page;
+use TYPO3\CMS\Form\Domain\Model\Renderable\RenderableInterface;
 use TYPO3\CMS\Form\Exception;
 
 /**
@@ -84,24 +85,24 @@ class FormDefinitionUtility
                 // duplication errors within form definition build
                 continue;
             }
-            self::addFieldToState($fieldState,
-                ['identifier' => $renderable->getIdentifier(),
-                    'label' => $renderable->getLabel(),
-                    'type' => $renderable->getType(),
-                    'renderingOptions' => ['deleted' => 0]
-                ]);
+            self::addFieldToState($fieldState, $renderable);
         }
         return $fieldState;
     }
 
     /**
-     * @param $field
      * @param $fieldState
+     * @param RenderableInterface $renderable
      */
-    public static function addFieldToState(&$fieldState, $field): void
+    public static function addFieldToState(&$fieldState, RenderableInterface $renderable): void
     {
-        $field = array_intersect_key($field, array_flip(self::fieldAttributeFilterKeys));
-        ArrayUtility::mergeRecursiveWithOverrule($fieldState, [$field['identifier'] => $field]);
+        ArrayUtility::mergeRecursiveWithOverrule($fieldState,
+            [$renderable->getIdentifier() =>
+                ['identifier' => $renderable->getIdentifier(),
+                    'label' => $renderable->getLabel(),
+                    'type' => $renderable->getType(),
+                    'renderingOptions' => ['deleted' => 0]
+                ]]);
     }
 
     /**
