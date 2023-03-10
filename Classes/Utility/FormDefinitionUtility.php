@@ -18,6 +18,7 @@ use TYPO3\CMS\Form\Domain\Exception\TypeDefinitionNotValidException;
 use TYPO3\CMS\Form\Domain\Factory\ArrayFormFactory;
 use TYPO3\CMS\Form\Domain\Model\FormDefinition;
 use TYPO3\CMS\Form\Domain\Model\FormElements\Page;
+use TYPO3\CMS\Form\Exception;
 
 /**
  * Class FormDefinitionUtility
@@ -62,7 +63,7 @@ class FormDefinitionUtility
             $newFieldState = array_filter($newFieldState, function($field) {
                 return
                     !self::isCompositeElement($field) &&
-                    count(array_intersect_key(array_flip(self::fieldAttributeFilterKeys,), $field)) === count(self::fieldAttributeFilterKeys);
+                    count(array_intersect_key(array_flip(self::fieldAttributeFilterKeys), $field)) === count(self::fieldAttributeFilterKeys);
             });
 
 
@@ -117,14 +118,14 @@ class FormDefinitionUtility
 
 
     /**
-     * @param $field
+     * @param array $field
      * @return bool
      * @throws PrototypeNotFoundException
      * @throws TypeDefinitionNotFoundException
      * @throws TypeDefinitionNotValidException
-     * @throws \TYPO3\CMS\Form\Exception
+     * @throws Exception
      */
-    public static function isCompositeElement($field): bool
+    public static function isCompositeElement(array $field): bool
     {
         static $page;
         static $registeredElements = [];

@@ -110,6 +110,6 @@ class FormHooks
      */
     public function beforeFormSave($formPersistenceIdentifier, $formDefinition)
     {
-        return $this->uniqueFieldHandler->updateNewFields($formDefinition);
+        return $this->uniqueFieldHandler->updateNewFields($formPersistenceIdentifier, $formDefinition);
     }
 }

@@ -19,6 +19,10 @@ use TYPO3\CMS\Form\Mvc\Persistence\FormPersistenceManager;
 class UniqueFieldHandler
 {
 
+    protected array $removedFields = [];
+    protected array $addedFields = [];
+    protected array $existingFieldsBeforeSave = [];
+
     /**
      * @var int $enableListViewUntilCount
      */
@@ -46,15 +50,18 @@ class UniqueFieldHandler
      * Makes sure that field identifiers are unique (identifiers of deleted fields are not reused)
      * Field state is saved to keep track of old fields
      *
+     * @param $formPersistenceIdentifier
      * @param $formDefinition
      * @return mixed
      */
-    public function updateNewFields($formDefinition)
+    public function updateNewFields($formPersistenceIdentifier, $formDefinition)
     {
         $fieldCount = 0;
+        $formDefinitionBeforeSave = $this->formPersistenceManager->load($formPersistenceIdentifier);
+        $this->setExistingFieldsBeforeSave($formDefinitionBeforeSave['renderables'] ?? []);
 
         $recursiveRenderableUpdate = function (array &$renderables) use (&$fieldCount, &$formDefinition, &$recursiveRenderableUpdate) {
-            if (!empty($renderable['renderables'])) {
+            if (!empty($renderables)) {
                 foreach ($renderables as &$renderable) {
                     if($renderable['renderables']) {
                         $recursiveRenderableUpdate($renderable['renderables']);
@@ -63,10 +70,10 @@ class UniqueFieldHandler
                         if(!FormDefinitionUtility::isCompositeElement($renderable)) {
                             $formDefinition['renderingOptions']['fieldState'][$renderable['identifier']]['active'] = 1;
                             $fieldCount++;
-                            // Identifier does not exist in state OR
+                            // Identifier is new OR
                             // Identifier exists as deleted in state
                             if (
-                                !isset($formDefinition['renderingOptions']['fieldState'][$renderable['identifier']])
+                                !in_array($renderable['identifier'], $this->existingFieldsBeforeSave)
                                 ||
                                 $formDefinition['renderingOptions']['fieldState'][$renderable['identifier']]['renderingOptions']['deleted'] === 1
                             ) {
@@ -156,5 +163,22 @@ class UniqueFieldHandler
             unset($field['active']);
             return $field;
         }, $formDefinition['renderingOptions']['fieldState']);
+    }
+
+    /**
+     * @param $renderables
+     * @return void
+     */
+    protected function setExistingFieldsBeforeSave($renderables) {
+        foreach ($renderables as $renderable) {
+            if(isset($renderable['renderables'])) {
+                $this->setExistingFieldsBeforeSave($renderable['renderables']);
+            } else {
+                if(!FormDefinitionUtility::isCompositeElement($renderable)) {
+                    $this->existingFieldsBeforeSave[] = $renderable['identifier'];
+                }
+            }
+        }
+
     }
 }
