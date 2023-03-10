@@ -24,11 +24,6 @@ class UniqueFieldHandler
     protected array $activeFields = [];
 
     /**
-     * @var int $enableListViewUntilCount
-     */
-    protected int $enableListViewUntilCount = 4;
-
-    /**
      * @var array
      */
     protected array $fieldTypesNextIdentifier = [];
@@ -59,7 +54,7 @@ class UniqueFieldHandler
         $fieldCount = 0;
         $this->setExistingFieldsBeforeSave($formPersistenceIdentifierBeforeSave);
 
-        FormDefinitionUtility::addFieldStateIfDoesNotExist($formDefinition, false, true);
+        FormDefinitionUtility::addFieldStateIfDoesNotExist($formDefinition, true);
         //Make map of next identifier for each field type
         $this->makeNextIdentifiersMap($formDefinition['renderingOptions']['fieldState']);
 
@@ -75,7 +70,6 @@ class UniqueFieldHandler
             ) {
                 //Existing field - update state
                 $this->updateNewFieldWithNextIdentifier($formDefinition['renderables'], $renderable);
-                $this->updateListViewState($formDefinition, $renderable->getIdentifier(), $fieldCount);
             }
             FormDefinitionUtility::addFieldToState($formDefinition['renderingOptions']['fieldState'], $renderable);
             $this->activeFields[] = $renderable->getIdentifier();
@@ -136,22 +130,6 @@ class UniqueFieldHandler
             }
         }
         return false;
-    }
-
-    /**
-     * @param $formDefinition
-     * @param $identifier
-     * @param $fieldCount
-     */
-    protected function updateListViewState(&$formDefinition, $identifier, $fieldCount): void
-    {
-        if (!isset($formDefinition['renderingOptions']['fieldState'][$identifier]['renderingOptions']['listView'])) {
-            if ($fieldCount <= $this->enableListViewUntilCount) {
-                $formDefinition['renderingOptions']['fieldState'][$identifier]['renderingOptions']['listView'] = 1;
-            } else {
-                $formDefinition['renderingOptions']['fieldState'][$identifier]['renderingOptions']['listView'] = 0;
-            }
-        }
     }
 
     /**

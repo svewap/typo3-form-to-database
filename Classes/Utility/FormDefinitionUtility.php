@@ -33,12 +33,10 @@ class FormDefinitionUtility
 
     /**
      * @param array $formDefinition
-     * @param bool $enableAllInListView
      * @param bool $force
      */
     public static function addFieldStateIfDoesNotExist(
         array &$formDefinition,
-        bool  $enableAllInListView = false,
         bool  $force = false
     ): void {
         $fieldState = $formDefinition['renderingOptions']['fieldState'] ?? [];
@@ -50,10 +48,8 @@ class FormDefinitionUtility
                 $fieldState
             );
 
-            $fieldCount = 0;
             //Mark all fields in state as not deleted
-            $newFieldState = array_map(function ($field) use (&$fieldCount, $enableAllInListView) {
-                $fieldCount++;
+            $newFieldState = array_map(function ($field) {
                 if(!isset($field['renderingOptions']['deleted'])) {
                     $field['renderingOptions']['deleted'] = 0;
                 }
