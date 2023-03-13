@@ -12,7 +12,7 @@ namespace Lavitto\FormToDatabase\Hooks;
 
 use Lavitto\FormToDatabase\Domain\Model\FormResult;
 use Lavitto\FormToDatabase\Domain\Repository\FormResultRepository;
-use Lavitto\FormToDatabase\Utility\FormDefinitionUtility;
+use Lavitto\FormToDatabase\Utility\UniqueFieldHandler;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Resource\StorageRepository;
@@ -32,33 +32,22 @@ use TYPO3\CMS\Form\Mvc\Persistence\FormPersistenceManagerInterface;
  */
 class FormHooks
 {
-
     /**
-     * @var array
+     * @var ObjectManager
      */
-    protected $fieldTypesNextIdentifier = [];
+    protected  $objectManager;
 
     /**
      * @var FormPersistenceManager
      */
-    protected $formPersistenceManager;
-
-    /**
-     * @var int $enableListViewUntilCount
-     */
-    protected $enableListViewUntilCount = 4;
-
-    /**
-     * @var ObjectManager
-     */
-    protected $objectManager;
+    protected  $formPersistenceManager;
 
     /**
      * The FormResultRepository
      *
      * @var FormResultRepository
      */
-    public $formResultRepository;
+    public  $formResultRepository;
 
     /**
      * Injects the FormResultRepository
@@ -89,6 +78,7 @@ class FormHooks
 
     /**
      * @param $formPersistenceIdentifier
+     * @return void
      * @throws IllegalObjectTypeException
      * @throws UnknownObjectException
      * @throws \TYPO3\CMS\Extbase\Persistence\Exception\InvalidQueryException
@@ -141,8 +131,8 @@ class FormHooks
      */
     public function beforeFormSave($formPersistenceIdentifier, $formDefinition)
     {
-        /** @var FormDefinitionUtility $formDefinitionUtility */
-        $formDefinitionUtility = GeneralUtility::makeInstance(FormDefinitionUtility::class);
-        return $formDefinitionUtility->updateFormDefinition($formDefinition);
+        $this->objectManager = GeneralUtility::makeInstance(ObjectManager::class);
+
+        return  $this->objectManager->get(UniqueFieldHandler::class)->updateNewFields($formPersistenceIdentifier, $formDefinition);
     }
 }

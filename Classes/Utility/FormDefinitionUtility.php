@@ -9,7 +9,18 @@
 
 namespace Lavitto\FormToDatabase\Utility;
 
+use TYPO3\CMS\Core\Utility\ArrayUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Object\ObjectManager;
+use TYPO3\CMS\Form\Domain\Configuration\ConfigurationService;
+use TYPO3\CMS\Form\Domain\Configuration\Exception\PrototypeNotFoundException;
+use TYPO3\CMS\Form\Domain\Exception\TypeDefinitionNotFoundException;
+use TYPO3\CMS\Form\Domain\Exception\TypeDefinitionNotValidException;
+use TYPO3\CMS\Form\Domain\Factory\ArrayFormFactory;
 use TYPO3\CMS\Form\Domain\Model\FormDefinition;
+use TYPO3\CMS\Form\Domain\Model\FormElements\Page;
+use TYPO3\CMS\Form\Domain\Model\Renderable\RenderableInterface;
+use TYPO3\CMS\Form\Exception;
 
 /**
  * Class FormDefinitionUtility
@@ -19,230 +30,124 @@ use TYPO3\CMS\Form\Domain\Model\FormDefinition;
 class FormDefinitionUtility
 {
 
-    /**
-     * @var array
-     */
-    protected $fieldTypesNextIdentifier = [];
+    const fieldAttributeFilterKeys = ['identifier', 'label', 'type'];
 
     /**
-     * @var int $enableListViewUntilCount
-     */
-    protected $enableListViewUntilCount = 4;
-
-    /**
-     * @var array
-     */
-    protected $fieldAttributeFilterKeys = ['identifier', 'label', 'type'];
-
-    /**
-     * @param array|FormDefinition $formDefinition
-     * @param bool $enableAllInListView
+     * @param array $formDefinition
      * @param bool $force
      */
-    public function addFieldStateIfDoesNotExist(
-        &$formDefinition,
-        bool $enableAllInListView = false,
-        bool $force = false
+    public static function addFieldStateIfDoesNotExist(
+        array &$formDefinition,
+        bool  $force = false
     ): void {
-        $fields = [];
-        if (is_object($formDefinition)) {
-            if (isset($formDefinition->getRenderingOptions()['fieldState'])) {
-                $fields = $formDefinition->getRenderingOptions()['fieldState'];
-            }
-        } elseif (isset($formDefinition['renderingOptions']['fieldState'])) {
-            $fields = $formDefinition['renderingOptions']['fieldState'];
-        }
+        $fieldState = $formDefinition['renderingOptions']['fieldState'] ?? [];
 
         // If no state exists - create state from current fields
-        if (empty($fields) || $force === true) {
-            $fieldState = $this->getFieldsFromFormDefinition($formDefinition, $fields);
-            $fieldCount = 0;
+        if (empty($fieldState) || $force === true) {
+            $newFieldState = self::addFieldsToStateFromFormDefinition(
+                self::convertFormDefinitionToObject($formDefinition),
+                $fieldState
+            );
+
             //Mark all fields in state as not deleted
-            $fieldState = array_map(function ($field) use (&$fieldCount, $enableAllInListView) {
-                $fieldCount++;
-                $field['renderingOptions']['deleted'] = 0;
-                $field['renderingOptions']['listView'] = ($enableAllInListView || $fieldCount <= $this->enableListViewUntilCount) ? 1 : 0;
+            $newFieldState = array_map(function ($field) {
+                if(!isset($field['renderingOptions']['deleted'])) {
+                    $field['renderingOptions']['deleted'] = 0;
+                }
                 return $field;
-            }, $fieldState);
-            if (is_object($formDefinition)) {
-                $formDefinition->setRenderingOption('fieldState', $fieldState);
-            } else {
-                $formDefinition['renderingOptions']['fieldState'] = $fieldState;
-            }
+            }, $newFieldState);
+
+            // Clean up fieldState - remove if incomplete
+            $newFieldState = array_filter($newFieldState, function($field) {
+                return
+                    !self::isCompositeElement($field) &&
+                    count(array_intersect_key(array_flip(self::fieldAttributeFilterKeys), $field)) === count(self::fieldAttributeFilterKeys);
+            });
+
+
+            $formDefinition['renderingOptions']['fieldState'] = $newFieldState;
         }
     }
 
     /**
-     * @param FormDefinition|array $formDefinition
-     * @param array $fields
+     * @param FormDefinition $formDefinition
+     * @param array $fieldState
      * @return array
      */
-    protected function getFieldsFromFormDefinition($formDefinition, array $fields = []): array
+    protected static function addFieldsToStateFromFormDefinition(FormDefinition $formDefinition, array $fieldState = []): array
     {
-        $renderables = is_object($formDefinition) ? $formDefinition->getRenderablesRecursively() : ($formDefinition['renderables'] ?? []);
-        if (is_object($formDefinition)) {
-            foreach ($renderables as $renderable) {
-                if (get_class($renderable) === 'TYPO3\CMS\Form\Domain\Model\FormElements\Page') {
-                    continue;
-                }
-                $identifier = $renderable->getIdentifier();
-                $fields[$identifier] = [
-                    'identifier' => $identifier,
-                    'label' => $renderable->getLabel(),
-                    'type' => $renderable->getType()
-                ];
-            }
-        } else {
-            foreach ($renderables as $renderable) {
-                if (!empty($renderable['renderables'])) {
-                    $fields = $this->getFieldsFromFormDefinition($renderable, $fields);
-                } elseif (!empty($renderable['identifier'])) {
-                    $fields[$renderable['identifier']] = $this->filterFieldAttributes($renderable);
-                }
-            }
-        }
-        return $fields;
-    }
-
-    /**
-     * @param $field
-     * @return array
-     */
-    protected function filterFieldAttributes($field): array
-    {
-        return array_intersect_key($field, array_flip($this->fieldAttributeFilterKeys));
-    }
-
-    /**
-     * Make sure that field identifiers are unique (identifiers of deleted fields are not reused)
-     * Field state is saved to keep track of old fields
-     *
-     * @param $formDefinition
-     * @return mixed
-     */
-    public function updateFormDefinition($formDefinition)
-    {
-        $this->addFieldStateIfDoesNotExist($formDefinition, false, true);
-        //Make map of next identifier for each field type
-        $this->makeNextIdentifiersMap($formDefinition['renderingOptions']['fieldState']);
-
-        $fieldCount = 0;
-        foreach ($formDefinition['renderables'] as &$steps) {
-            if (empty($steps['renderables'])) {
+        foreach ($formDefinition->getRenderablesRecursively() as $renderable) {
+            if ($renderable instanceof \TYPO3\CMS\Form\Domain\Model\Renderable\CompositeRenderableInterface) {
+                // Prevent composite elements within field state to avoid
+                // duplication errors within form definition build
                 continue;
             }
-            foreach ($steps['renderables'] as &$field) {
-                $fieldCount++;
-                //New field - field identifier does not exist in state OR New field - but identifier exists(deleted field) in state
-                if (
-                    !isset($formDefinition['renderingOptions']['fieldState'][$field['identifier']])
-                    ||
-                    $formDefinition['renderingOptions']['fieldState'][$field['identifier']]['renderingOptions']['deleted'] === 1
-                ) {
-                    $this->updateNewFieldIdentifier($field);
-                    $this->addFieldToState($formDefinition, $field);
-                    $this->updateListViewState($formDefinition, $field, $fieldCount);
-                    //Existing field - update state
-                } else {
-                    $formDefinition['renderingOptions']['fieldState'][$field['identifier']] = array_merge($formDefinition['renderingOptions']['fieldState'][$field['identifier']],
-                        $this->filterFieldAttributes($field));
-                }
-                $formDefinition['renderingOptions']['fieldState'][$field['identifier']]['active'] = 1;
-            }
+            self::addFieldToState($fieldState, $renderable);
         }
-        unset($steps, $field);
-
-        //Mark all fields that are found in renderables as deleted in state
-        $this->updateStateDeletedState($formDefinition);
-        return $formDefinition;
+        return $fieldState;
     }
 
     /**
      * @param $fieldState
+     * @param RenderableInterface $renderable
      */
-    protected function makeNextIdentifiersMap($fieldState): void
+    public static function addFieldToState(&$fieldState, RenderableInterface $renderable): void
     {
-        foreach ($fieldState as $identifier => &$field) {
-            $identifierParts = explode('-', $field['identifier']);
-            $identifierText = $identifierParts[0];
-            $identifierNumber = $identifierParts[1] ?? '0';
+        ArrayUtility::mergeRecursiveWithOverrule($fieldState,
+            [$renderable->getIdentifier() =>
+                ['identifier' => $renderable->getIdentifier(),
+                    'label' => $renderable->getLabel(),
+                    'type' => $renderable->getType(),
+                    'renderingOptions' => ['deleted' => 0]
+                ]]);
+    }
 
-            if (!isset($this->fieldTypesNextIdentifier[$field['type']])) {
-                $this->fieldTypesNextIdentifier[$field['type']] = [
-                    'text' => $identifierText,
-                    'number' => $identifierNumber
-                ];
-            } else {
-                $this->fieldTypesNextIdentifier[$field['type']] = [
-                    'text' => $identifierText,
-                    'number' => max($this->fieldTypesNextIdentifier[$field['type']]['number'], $identifierNumber)
-                ];
-            }
+    /**
+     * @param array $formDefinition
+     * @return FormDefinition
+     */
+    public static function convertFormDefinitionToObject(array $formDefinition): FormDefinition
+    {
+
+        /** @var ArrayFormFactory $arrayFormFactory */
+        $arrayFormFactory = GeneralUtility::makeInstance(ArrayFormFactory::class);
+        return $arrayFormFactory->build($formDefinition);
+    }
+
+
+    /**
+     * @param array $field
+     * @return bool
+     * @throws PrototypeNotFoundException
+     * @throws TypeDefinitionNotFoundException
+     * @throws TypeDefinitionNotValidException
+     * @throws Exception
+     */
+    public static function isCompositeElement(array $field): bool
+    {
+        static $page;
+        static $compositeRenderables = [];
+        if(!isset($page)) {
+            $objectManager = GeneralUtility::makeInstance(ObjectManager::class);
+            $prototypeConfiguration = $objectManager->get(ConfigurationService::class)
+                ->getPrototypeConfiguration('standard');
+
+            $formDef = $objectManager->get(
+                FormDefinition::class,
+                'fieldStageForm',
+                $prototypeConfiguration,
+                'Form'
+            );
+
+            $page = $objectManager->get(Page::class, 'fieldStatePage', 'Page');
+            $page->setParentRenderable($formDef);
         }
-        unset($field);
-        array_walk($this->fieldTypesNextIdentifier, static function (&$val) {
-            $val['number']++;
-        });
-    }
-
-    /**
-     * @param $field
-     */
-    protected function updateNewFieldIdentifier(&$field): void
-    {
-        //  Opdatere identifier med $fieldTypesNextIdentifier
-        $field['identifier'] = $this->getNextIdentifier($field['type'], $field['identifier']);
-    }
-
-    /**
-     * @param $type
-     * @param $identifier
-     * @return string
-     */
-    protected function getNextIdentifier($type, $identifier): string
-    {
-        if (isset($this->fieldTypesNextIdentifier[$type])) {
-            $identifier = $this->fieldTypesNextIdentifier[$type]['text'] . '-' . $this->fieldTypesNextIdentifier[$type]['number'];
-            $this->fieldTypesNextIdentifier[$type]['number']++;
+        if($field['type'] === 'Page') {
+            $compositeRenderables[$field['identifier']] = true;
+        } elseif (!isset($compositeRenderables[$field['identifier']])) {
+            $element = $page->createElement($field['identifier'], $field['type']);
+            $compositeRenderables[$field['identifier']] = $element instanceof \TYPO3\CMS\Form\Domain\Model\Renderable\CompositeRenderableInterface;
         }
-        return $identifier;
-    }
-
-    /**
-     * @param $field
-     * @param $formDefinition
-     */
-    protected function addFieldToState(&$formDefinition, $field): void
-    {
-        //  Tilføje ny til fieldState
-        $formDefinition['renderingOptions']['fieldState'][$field['identifier']] = $this->filterFieldAttributes($field);
-    }
-
-    /**
-     * @param $formDefinition
-     * @param $field
-     * @param $fieldCount
-     */
-    protected function updateListViewState(&$formDefinition, $field, $fieldCount): void
-    {
-        if (!isset($formDefinition['renderingOptions']['fieldState'][$field['identifier']]['renderingOptions']['listView'])) {
-            if ($fieldCount <= $this->enableListViewUntilCount) {
-                $formDefinition['renderingOptions']['fieldState'][$field['identifier']]['renderingOptions']['listView'] = 1;
-            } else {
-                $formDefinition['renderingOptions']['fieldState'][$field['identifier']]['renderingOptions']['listView'] = 0;
-            }
-        }
-    }
-
-    /**
-     * @param $formDefinition
-     */
-    protected function updateStateDeletedState(&$formDefinition): void
-    {
-        $formDefinition['renderingOptions']['fieldState'] = array_map(static function ($field) {
-            $field['renderingOptions']['deleted'] = isset($field['active']) ? 0 : 1;
-            unset($field['active']);
-            return $field;
-        }, $formDefinition['renderingOptions']['fieldState']);
+        return $compositeRenderables[$field['identifier']];
     }
 }

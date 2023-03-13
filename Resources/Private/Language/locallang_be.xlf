@@ -36,6 +36,9 @@
             <trans-unit id="show.crdate" xml:space="preserve">
                 <source>Date/Time</source>
             </trans-unit>
+            <trans-unit id="show.field_deleted" xml:space="preserve">
+                <source>This field has been deleted</source>
+            </trans-unit>
             <trans-unit id="show.buttons.backlink" xml:space="preserve">
                 <source>Back to overview</source>
             </trans-unit>
@@ -77,6 +80,9 @@
             </trans-unit>
             <trans-unit id="show.itemListSelect.table.identifier" xml:space="preserve">
                 <source>Identifier</source>
+            </trans-unit>
+            <trans-unit id="show.itemListSelect.deleted_fields" xml:space="preserve">
+                <source>Deleted fields</source>
             </trans-unit>
         </body>
     </file>

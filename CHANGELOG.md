@@ -12,4 +12,3 @@
 - [BUGFIX] Fix undefined index (!30)
 - [BUGFIX] Fix undefined array key issues with php 8
 - [BUGFIX] Exception in Result List on multipage form
-- [BUGFIX] Fields in Rows, Fieldsets and repeatable containers were being hidden due to TYPO3 marking them as deleted

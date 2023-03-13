@@ -82,6 +82,9 @@ class FormResultsController extends FormManagerController
      */
     protected const CSV_ENCLOSURE = '"';
 
+    const defaultNumberOfColumnsInListView = 4;
+
+
     /**
      * @var ExtConfUtility
      */
@@ -376,15 +379,8 @@ class FormResultsController extends FormManagerController
         $formDefinitionUtility = GeneralUtility::makeInstance(FormDefinitionUtility::class);
         $formDefinitionUtility->addFieldStateIfDoesNotExist($formDefinition);
 
-        $fieldSelectedState = $this->request->getArgument('field');
-        if (isset($formDefinition['renderingOptions']['fieldState'])) {
-            foreach ($formDefinition['renderingOptions']['fieldState'] as $fieldKey => &$fieldData) {
-                $fieldData['renderingOptions']['listView'] = $fieldSelectedState[$fieldKey] ? 1 : 0;
-            }
-            unset($fieldData);
-        }
-
-        $this->formPersistenceManager->save($formPersistenceIdentifier, $formDefinition);
+        $this->BEUser->uc['tx_formtodatabase']['listViewStates'][$formDefinition['identifier']] = $this->request->getArgument('field');
+        $this->BEUser->writeUC();
         $this->redirect('show', null, null,
             ['formPersistenceIdentifier' => $this->request->getArgument('formPersistenceIdentifier')]);
     }
@@ -488,24 +484,8 @@ class FormResultsController extends FormManagerController
     ): array {
         $configuration = $this->formPersistenceManager->load($formPersistenceIdentifier);
 
-        /**
-         * Fields in nested items (e.g. repeatable containers & fieldsets)
-         * have "deleted" set to 1.
-         *
-         * This sets it to 0 if it is nested in the renderables
-         */
-        foreach ($configuration['renderables'] as $pages) {
-            foreach ($pages['renderables'] as $renderable) {
-                foreach ($renderable['renderables'] ?? [] as $field) {
-                    if(isset($configuration['renderingOptions']['fieldState'][$field['identifier']])) {
-                        $configuration['renderingOptions']['fieldState'][$field['identifier']]['renderingOptions']['deleted'] = 0;
-                    }
-                }
-            }
-        }
-
         $this->hydrateRepeatableFields($configuration);
-
+        $this->enrichFieldStateWithListViewStates($configuration);
         if ($useFieldStateDataAsRenderables) {
             //Ensure that fieldState exists
             /** @var FormDefinitionUtility $formDefinitionUtility */
@@ -619,6 +599,30 @@ class FormResultsController extends FormManagerController
     }
 
     /**
+     * @param array $formDefinition
+     * @return void
+     */
+    protected function enrichFieldStateWithListViewStates(array &$formDefinition) {
+        // Set listView states from user configuration
+        if($listViewStates = $this->BEUser->uc['tx_formtodatabase']['listViewStates'][$formDefinition['identifier']] ?? false) {
+            foreach ($formDefinition['renderingOptions']['fieldState'] ?? [] as $identifier => $field) {
+                $formDefinition['renderingOptions']['fieldState'][$identifier]['renderingOptions']['listView'] = ($listViewStates[$field['identifier']] ?? false) ? 1 : 0;
+            }
+        } else {
+            // Prioritize old method of storing listView state, when saved in fieldState. Then return with no changes
+            foreach ($formDefinition['renderingOptions']['fieldState'] ?? [] as $identifier => $field) {
+                if(isset($field['renderingOptions']['listView'])) return;
+            }
+            // New default - if user has not selected field to view in listView, display the first {self::defaultNumberOfColumnsInListView} fields
+            $count = 0;
+            foreach ($formDefinition['renderingOptions']['fieldState'] ?? [] as $identifier => $field) {
+                $listViewEnable = ($field['renderingOptions']['deleted'] ?? 0) == 0 && $count++ < self::defaultNumberOfColumnsInListView;
+                $formDefinition['renderingOptions']['fieldState'][$identifier]['renderingOptions']['listView'] = $listViewEnable ? 1 : 0;
+            }
+        }
+    }
+
+    /**
      * Removes excluded renderables from configuration
      *
      * @param array $renderables
@@ -630,9 +634,6 @@ class FormResultsController extends FormManagerController
                 unset($renderables[$i]);
             } elseif (isset($renderable['renderables']) && !empty($renderable['renderables'])) {
                 $this->filterExcludedFormFieldsInConfiguration($renderables[$i]['renderables']);
-            }
-            if (isset($renderable['renderingOptions']['deleted']) && $renderable['renderingOptions']['deleted']) {
-                unset($renderables[$i]);
             }
         }
     }
