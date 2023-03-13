@@ -125,7 +125,7 @@ class FormDefinitionUtility
     public static function isCompositeElement(array $field): bool
     {
         static $page;
-        static $registeredElements = [];
+        static $compositeRenderables = [];
         if(!isset($page)) {
             $prototypeConfiguration = GeneralUtility::makeInstance(ConfigurationService::class)
                 ->getPrototypeConfiguration('standard');
@@ -140,10 +140,12 @@ class FormDefinitionUtility
             $page = GeneralUtility::makeInstance(Page::class, 'fieldStatePage', 'Page');
             $page->setParentRenderable($formDef);
         }
-        if(!isset($registeredElements[$field['identifier']])) {
+        if($field['type'] === 'Page') {
+            $compositeRenderables[$field['identifier']] = true;
+        } elseif (!isset($compositeRenderables[$field['identifier']])) {
             $element = $page->createElement($field['identifier'], $field['type']);
-            $registeredElements[$field['identifier']] = $element instanceof \TYPO3\CMS\Form\Domain\Model\Renderable\CompositeRenderableInterface;
+            $compositeRenderables[$field['identifier']] = $element instanceof \TYPO3\CMS\Form\Domain\Model\Renderable\CompositeRenderableInterface;
         }
-        return $registeredElements[$field['identifier']];
+        return $compositeRenderables[$field['identifier']];
     }
 }
