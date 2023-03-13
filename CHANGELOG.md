@@ -8,7 +8,12 @@
 - [TASK] Save repeatable fields to database (#59)
 - [TASK] Improved marking when new entries (!36)
 - [TASK] Set CSV to be comma seperated by default (#83)
+- [TASK] Incorporated the fix from Timo: !46
+- [TASK] Moved listView states from fieldState to backenduser UC.
+- [TASK] Made it possible to see which fields are deleted in the show view and the column selector.
+- [TASK] Rename methods and variables to be more self explaining.
 - [BUGFIX] added quotation marks around identifier numberOfResults because PostgreSQL changes unquoted identifiers to lowercase
 - [BUGFIX] Fix undefined index (!30)
 - [BUGFIX] Fix undefined array key issues with php 8
 - [BUGFIX] Exception in Result List on multipage form
+- [BUGFIX] Nested elements should work. Fixed nested fields always marked deleted.
