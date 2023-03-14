@@ -84,6 +84,9 @@
             <trans-unit id="show.itemListSelect.deleted_fields" xml:space="preserve">
                 <source>Deleted fields</source>
             </trans-unit>
+            <trans-unit id="show.itemListSelect.fields_no_data" xml:space="preserve">
+                <source>Following fields had no data:</source>
+            </trans-unit>
         </body>
     </file>
 </xliff>

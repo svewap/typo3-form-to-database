@@ -55,20 +55,29 @@
 								</tr>
 							</f:if>
 							<f:for each="{renderables}" as="renderable">
-								<tr>
-									<th>{renderable.label}</th>
-									<td>{renderable.type}</td>
-									<td>{renderable.identifier}</td>
-									<td>
-										<f:form.checkbox
-												checked="{f:if(condition:'{renderable.renderingOptions.listView}', then:'checked')}"
-												name="field[{renderable.identifier}]" value="1"></f:form.checkbox>
-									</td>
-								</tr>
+								<f:if condition="{fieldsWithData.{renderable.identifier}}">
+									<tr>
+										<th>{renderable.label}</th>
+										<td>{renderable.type}</td>
+										<td>{renderable.identifier}</td>
+										<td>
+											<f:form.checkbox
+													checked="{f:if(condition:'{renderable.renderingOptions.listView}', then:'checked')}"
+													name="field[{renderable.identifier}]" value="1"></f:form.checkbox>
+										</td>
+									</tr>
+								</f:if>
 							</f:for>
 						</f:groupedFor>
 						</tbody>
 					</table>
+					<f:if condition="{fieldsWithNoData}">
+						<f:translate
+								key="LLL:EXT:form_to_database/Resources/Private/Language/locallang_be.xlf:show.itemListSelect.fields_no_data"/><br/>
+						<f:for each="{fieldsWithNoData}" key="field" as="dataExists" iteration="iterator">
+							{field}<f:if condition="{iterator.isLast}"><f:else>,</f:else></f:if>
+						</f:for>
+					</f:if>
 				</div>
 				<f:form.hidden name="formPersistenceIdentifier" value="{formPersistenceIdentifier}"/>
 				<br/>

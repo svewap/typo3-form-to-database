@@ -225,6 +225,7 @@ class FormResultsController extends FormManagerController
      */
     public function showAction(string $formPersistenceIdentifier): ResponseInterface
     {
+        $fieldsWithData = [];
         $this->moduleTemplate = $this->moduleTemplateFactory->create($this->request);
 
         $currentPage = $this->request->getArguments()['currentPage'] ?? 1;
@@ -249,6 +250,11 @@ class FormResultsController extends FormManagerController
                 }
             }
         }
+        /** @var FormResult $formResult */
+        foreach ($formResults as $formResult) {
+            $fieldsWithData = array_merge($fieldsWithData, array_fill_keys(array_keys($formResult->getResultAsArray()), 1));
+        }
+        $fieldsWithNoData = array_diff_key(array_fill_keys(array_keys($formDefinition->getRenderingOptions()['fieldState'] ?? []), 1), $fieldsWithData);
 
         /** @var FormResultShowActionEvent $event */
         $this->eventDispatcher->dispatch(
@@ -273,6 +279,8 @@ class FormResultsController extends FormManagerController
             'lastView' => $lastView,
             'paginator' => $paginator,
             'pagination' => $pagination,
+            'fieldsWithData' => $fieldsWithData,
+            'fieldsWithNoData' => $fieldsWithNoData
         ]);
         $this->assignDefaults();
 
