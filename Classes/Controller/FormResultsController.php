@@ -668,7 +668,7 @@ class FormResultsController extends FormManagerController
      */
     protected function getCsvContent(string $formPersistenceIdentifier, bool $filtered = false): string
     {
-        $csvDelimiter = $this->extConfUtility->getConfig('csvDelimiter') ?? ';';
+        $csvDelimiter = $this->extConfUtility->getConfig('csvDelimiter') ?? ',';
         $csvContent = [];
 
         $formResults = $this->formResultRepository->findByFormPersistenceIdentifier($formPersistenceIdentifier);

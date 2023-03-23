@@ -1,3 +1,7 @@
+# Upcoming
+
+- [BUG] Use Extconf API to retrieve config (#93)
+
 # 2.2.0
 
 ⚠️ This release fixes a regression to re-enable the correct TYPO3 support. More details in [!37](https://gitlab.com/lavitto/typo3-form-to-database/-/merge_requests/37)
