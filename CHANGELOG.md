@@ -1,4 +1,4 @@
-# Upcoming
+# 2.2.1
 
 - [BUG] Use Extconf API to retrieve config (#93)
 
