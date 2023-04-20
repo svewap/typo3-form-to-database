@@ -1,3 +1,15 @@
+# 3.0.0
+
+- [BREAKING] Drop TYPO3 9.5 support
+- [BREAKING] Drop TYPO3 10.4 support
+- [TASK] Refactoring of code
+- [BUGFIX] Deleted fields are not shown in result (#89)
+- [BUGFIX] Unique fields handling does not work (#88)
+- [BUGFIX] Undefined array key list view (#87)
+- [BUGFIX] Error when Editing Attributes (#67)
+- [FEATURE] Allow dynamic child fields for an form element (#82)
+- 
+
 # 2.2.1
 
 - [BUG] Use Extconf API to retrieve config (#93)
