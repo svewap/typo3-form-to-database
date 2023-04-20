@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpFullyQualifiedNameUsageInspection */
 /**
  * This file is part of the "form_to_database" Extension for TYPO3 CMS.
  *
@@ -8,21 +8,19 @@
 
 defined('TYPO3_MODE') or die();
 
-if (TYPO3_MODE === 'BE') {
-    \TYPO3\CMS\Extbase\Utility\ExtensionUtility::registerModule(
-        'Lavitto.FormToDatabase',
-        'web',
-        'formresults',
-        'after:FormFormbuilder',
-        [
-            'FormResults' => 'index, show, downloadCsv, deleteFormResult, updateItemListSelect, unDeleteFormDefinition'
-        ],
-        [
-            'access' => 'user,group',
-            'icon' => 'EXT:form_to_database/Resources/Public/Icons/Extension.svg',
-            'labels' => 'LLL:EXT:form_to_database/Resources/Private/Language/locallang_mod.xlf',
-            'navigationComponentId' => '',
-            'inheritNavigationComponentFromMainModule' => false
-        ]
-    );
-}
+\TYPO3\CMS\Extbase\Utility\ExtensionUtility::registerModule(
+    'FormToDatabase',
+    'web',
+    'formresults',
+    'after:FormFormbuilder',
+    [
+        \Lavitto\FormToDatabase\Controller\FormResultsController::class => 'index, show, downloadCsv, deleteFormResult, updateItemListSelect, unDeleteFormDefinition',
+    ],
+    [
+        'access' => 'user,group',
+        'icon' => 'EXT:form_to_database/Resources/Public/Icons/Extension.svg',
+        'labels' => 'LLL:EXT:form_to_database/Resources/Private/Language/locallang_mod.xlf',
+        'navigationComponentId' => '',
+        'inheritNavigationComponentFromMainModule' => false
+    ]
+);

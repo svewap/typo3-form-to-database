@@ -1,0 +1,16 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  Lavitto\FormToDatabase\:
+    resource: '../Classes/*'
+  Lavitto\FormToDatabase\Hooks\FormHooks:
+    public: true
+  Lavitto\FormToDatabase\Command\DeleteFormResultCommand:
+    tags:
+      - name: 'console.command'
+        command: 'form_to_database:deleteFormResults'
+        description: 'Deletes form results.'
+        schedulable: false

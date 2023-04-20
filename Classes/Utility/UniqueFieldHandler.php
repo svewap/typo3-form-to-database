@@ -148,7 +148,8 @@ class UniqueFieldHandler
      * @param string $formPersistenceIdentifier
      * @return void
      */
-    protected function setExistingFieldsBeforeSave(string $formPersistenceIdentifier) {
+    protected function setExistingFieldsBeforeSave(string $formPersistenceIdentifier): void
+    {
         $formDefinitionBeforeSave = $this->formPersistenceManager->load($formPersistenceIdentifier);
         $renderables = FormDefinitionUtility::convertFormDefinitionToObject($formDefinitionBeforeSave)->getRenderablesRecursively();
         foreach ($renderables as $renderable) {

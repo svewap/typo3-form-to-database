@@ -47,6 +47,10 @@
                 <source>Date/Time</source>
                 <target>Dato/Tid</target>
             </trans-unit>
+            <trans-unit id="show.field_deleted" xml:space="preserve">
+                <source>This field has been deleted</source>
+                <target>Dette felt er blevet slettet</target>
+            </trans-unit>
             <trans-unit id="show.buttons.backlink" xml:space="preserve">
                 <source>Back to overview</source>
                 <target>Tilbage til oversigten</target>
@@ -54,6 +58,10 @@
             <trans-unit id="show.buttons.download_csv" xml:space="preserve">
                 <source>CSV-Download (all columns)</source>
                 <target>Download formulardata som CSV</target>
+            </trans-unit>
+            <trans-unit id="show.buttons.download_csv_filtered" xml:space="preserve">
+                <source>CSV-Download (only visible)</source>
+                <target>Download formulardata som CSV (kun synlige)</target>
             </trans-unit>
             <trans-unit id="show.buttons.column_settings" xml:space="preserve">
                 <source>Columns</source>
@@ -94,6 +102,14 @@
             <trans-unit id="show.itemListSelect.table.identifier" xml:space="preserve">
                 <source>Identifier</source>
                 <target>Id</target>
+            </trans-unit>
+            <trans-unit id="show.itemListSelect.deleted_fields" xml:space="preserve">
+                <source>Deleted fields</source>
+                <target>Slettede felter</target>
+            </trans-unit>
+            <trans-unit id="show.itemListSelect.fields_no_data" xml:space="preserve">
+                <source>Following fields had no data:</source>
+                <target>Følgende felter havde ingen data:</target>
             </trans-unit>
         </body>
     </file>

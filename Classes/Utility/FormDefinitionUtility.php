@@ -11,7 +11,6 @@ namespace Lavitto\FormToDatabase\Utility;
 
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3\CMS\Form\Domain\Configuration\ConfigurationService;
 use TYPO3\CMS\Form\Domain\Configuration\Exception\PrototypeNotFoundException;
 use TYPO3\CMS\Form\Domain\Exception\TypeDefinitionNotFoundException;
@@ -128,18 +127,17 @@ class FormDefinitionUtility
         static $page;
         static $compositeRenderables = [];
         if(!isset($page)) {
-            $objectManager = GeneralUtility::makeInstance(ObjectManager::class);
-            $prototypeConfiguration = $objectManager->get(ConfigurationService::class)
+            $prototypeConfiguration = GeneralUtility::makeInstance(ConfigurationService::class)
                 ->getPrototypeConfiguration('standard');
 
-            $formDef = $objectManager->get(
+            $formDef = GeneralUtility::makeInstance(
                 FormDefinition::class,
                 'fieldStageForm',
                 $prototypeConfiguration,
                 'Form'
             );
 
-            $page = $objectManager->get(Page::class, 'fieldStatePage', 'Page');
+            $page = GeneralUtility::makeInstance(Page::class, 'fieldStatePage', 'Page');
             $page->setParentRenderable($formDef);
         }
         if($field['type'] === 'Page') {
