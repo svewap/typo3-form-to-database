@@ -54,10 +54,11 @@ class UniqueFieldHandler
         $fieldCount = 0;
         $this->setExistingFieldsBeforeSave($formPersistenceIdentifierBeforeSave);
 
+        FormDefinitionUtility::addFieldStateIfDoesNotExist($formDefinition, true);
+
         //Make map of next identifier for each field type
         $this->makeNextIdentifiersMap($formDefinition['renderingOptions']['fieldState']);
 
-        FormDefinitionUtility::addFieldStateIfDoesNotExist($formDefinition, true);
 
         foreach (FormDefinitionUtility::convertFormDefinitionToObject($formDefinition)->getRenderablesRecursively() as $renderable) {
             if($renderable instanceof \TYPO3\CMS\Form\Domain\Model\Renderable\CompositeRenderableInterface) {
