@@ -89,7 +89,7 @@ class UniqueFieldHandler
             $identifierParts = explode('-', $field['identifier']);
             $identifierText = $identifierParts[0];
             $identifierNumber = $identifierParts[1] ?? '0';
-
+            if($identifierText !== strtolower($field['type'])) continue;
             if (!isset($this->fieldTypesNextIdentifier[$field['type']])) {
                 $this->fieldTypesNextIdentifier[$field['type']] = [
                     'text' => $identifierText,
