@@ -140,7 +140,7 @@ class FormDefinitionUtility
             $page = GeneralUtility::makeInstance(Page::class, 'fieldStatePage', 'Page');
             $page->setParentRenderable($formDef);
         }
-        if($field['type'] === 'Page') {
+        if(in_array($field['type'], ['SummaryPage','Page'])) {
             $compositeRenderables[$field['identifier']] = true;
         } elseif (!isset($compositeRenderables[$field['identifier']])) {
             $element = $page->createElement($field['identifier'], $field['type']);
