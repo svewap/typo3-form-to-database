@@ -8,7 +8,6 @@
 - [BUGFIX] Undefined array key list view (#87)
 - [BUGFIX] Error when Editing Attributes (#67)
 - [FEATURE] Allow dynamic child fields for an form element (#82)
-- 
 
 # 2.2.1
 

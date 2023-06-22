@@ -28,10 +28,10 @@ $EM_CONF[$_EXTKEY] = [
             'Lavitto\\FormToDatabase\\' => 'Classes'
         ],
     ],
-    'state' => 'beta',
+    'state' => 'stable',
     'createDirs' => '',
     'author' => 'Philipp Mueller',
     'author_email' => 'philipp.mueller@lavitto.ch',
     'author_company' => 'lavitto ag',
-    'version' => '2.2.1'
+    'version' => '3.0.0'
 ];
