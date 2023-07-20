@@ -1,3 +1,7 @@
+# 2.2.2
+
+- [BUG] Reinstate commands file to register commands
+
 # 2.2.1
 
 - [BUG] Use Extconf API to retrieve config (#93)
