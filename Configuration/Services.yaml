@@ -13,4 +13,4 @@ services:
       - name: 'console.command'
         command: 'form_to_database:deleteFormResults'
         description: 'Deletes form results.'
-        schedulable: false
+        schedulable: true
