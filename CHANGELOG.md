@@ -1,3 +1,7 @@
+# 3.0.1
+
+- [BUGFIX] Make task schedulable
+
 # 3.0.0
 
 - [BREAKING] Drop TYPO3 9.5 support
